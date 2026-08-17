@@ -17,8 +17,10 @@ supabase/migrations/  SQL schema: organizations, users, subscription tiers,
 
 ## Getting started
 
-See `apps/web/README.md` for setup (Supabase project, env vars, running the
-dev server).
+See [`LOCAL_DEV.md`](./LOCAL_DEV.md) to run the whole stack locally (local
+Supabase via Docker + the Next.js dev server) and walk through the
+tier-gating golden path end to end. `apps/web/README.md` has quicker
+reference notes once you're set up.
 
 ## Stack
 
