@@ -25,12 +25,13 @@ enforced server-side via a `requireTier()` guard on every protected route —
 never just hidden in the UI. Both sources are explicit and consistent on this:
 build the gating layer before any feature UI.
 
-## 2. Decisions the two sources leave open
+## 2. Decisions (confirmed)
 
-Everything below needs an answer before scaffolding starts, because it
-determines the shape of the repo, the schema, and the deployment target.
-Recommendations are marked, with reasoning — see the questions sent alongside
-this plan.
+Backend: **Supabase + Node worker**. Frontend: **Next.js App Router**. First
+PR scope: **Foundation (org/user schema, `subscription_tier`, auth,
+`requireTier()` guard, tier-flip test tool) + Course CRUD** (Course → Section
+→ Lesson structure and a basic Block Lesson editor: text/heading, image,
+video, list blocks). Reasoning for each recorded below.
 
 ### 2.1 Backend platform: custom Node/TS API vs. Supabase
 The spec explicitly offers both ("Node.js/TypeScript API (or Supabase if the
@@ -147,9 +148,27 @@ Learner/Participant → Reviewer/Stakeholder (read-only feedback links, spec
 only). Building all six from the start costs little once RBAC middleware
 exists, so keep the full set rather than trimming to the brief's five.
 
-## 6. What this plan deliberately does not do yet
+## 6. Status
 
-No code, schema migrations, or package.json has been written. Scaffolding
-starts once the questions accompanying this plan are answered — the answers
-change the monorepo layout, the ORM choice, and whether the first PR includes
-a `supabase/` directory or a `docker-compose.yml` for local Postgres.
+Step 1 (Foundation) and step 2 (Course structure) are scaffolded:
+
+- `apps/web` — Next.js 16 App Router app. Auth (`/login`, `/signup`, sign
+  out), `getSession()`/`requireTier()`/`requireRole()` guards, a course
+  dashboard, a drag-and-drop outline editor (sections/lessons), a Block
+  Lesson editor (heading, text, statement, quote, list, image, video,
+  divider blocks — covers and exceeds the "at least text/image/video/list"
+  bar from the build order), and an `/upgrade` page that doubles as the
+  manual tier-flip test tool until Stripe is wired.
+- `supabase/migrations/` — `organizations`/`users`/`subscription_tier`,
+  the course structure tables, RLS policies scoped by `org_id`, and a
+  sign-up trigger that gives every new user their own FREE-tier
+  organization.
+- `/studio/live` demonstrates the MAXPRO-gate UX pattern (`<LockedFeature>`:
+  visible, disabled, "Upgrade to MAXPRO" CTA) ahead of Live Sessions itself
+  being built, so the gate is provably wired before step 6.
+
+Not yet built: Quiz Lesson content editing (step 3), theming/publish/SCORM
+(steps 4–5), and everything in Module B/C (steps 6–9). Quiz lessons can be
+created structurally (they show a placeholder in the editor) since the
+outline needs both lesson types to be a real test of the drag-and-drop
+reordering.
