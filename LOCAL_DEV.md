@@ -107,6 +107,22 @@ Open http://localhost:3000.
    from the first account's `/studio` — that's the multi-tenant RLS
    isolation working.
 
+## Automated tests
+
+Two separate test suites, from `apps/web`:
+
+```bash
+npm test        # vitest -- pure logic: analytics, live-session aggregation,
+                 # course ordering, SCORM manifest/suspend-data
+npm run test:db  # supabase/tests/run.sh -- RLS/migration behavior against
+                 # a throwaway local Postgres (needs `sudo -u postgres psql`
+                 # access; see supabase/tests/00_stub.sql for what it stubs)
+```
+
+`test:db` drops and recreates a scratch `etvet_test` database each run, so
+it's always safe to run against your local Postgres -- it never touches
+the `supabase start` database you use for `npm run dev`.
+
 ## Stopping
 
 ```bash

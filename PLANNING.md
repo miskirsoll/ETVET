@@ -728,11 +728,41 @@ slice; a few things explicitly deferred to §7.7/later.
   a single step, plus one dedicated audit pass before calling any tier
   "launch ready."
 
-### 7.14 Testing & production readiness — M, ongoing
+### 7.14 Testing & production readiness — M, ongoing — **automated test suite added**
 
-- No automated tests exist yet (unit or e2e) — worth introducing
-  alongside §7.1/§7.4 rather than after, given how much RLS/tier-gating
-  logic already exists to regress against.
+- ~~No automated tests exist yet~~ Two suites now exist, both runnable
+  from `apps/web`:
+  - `npm test` (Vitest): pure-logic unit tests for
+    `lib/analytics/compute.ts`, `lib/live/aggregate.ts`,
+    `lib/course/order.ts`, and the SCORM package's
+    `lib/scorm/manifest.ts`/`validate.ts`/`suspendData.ts` — the last one
+    actually executes the *generated* JS via Node's `vm` module rather
+    than re-implementing the encode/decode logic in the test, matching
+    the same methodology used to build it. 31 tests, all passing.
+  - `npm run test:db` (`supabase/tests/run.sh`): applies every migration
+    to a fresh throwaway local Postgres (stubbing the parts of Supabase's
+    `auth`/`storage` schemas RLS depends on, in `supabase/tests/00_stub.sql`)
+    and runs self-asserting SQL test cases (`supabase/tests/cases/*.sql`)
+    covering every RLS/RPC fix made this build: grants + the
+    `get_learner_progress`/`submit_learner_progress` RPCs (§7.4), theme
+    public-read + media storage object RLS (§7.2/§7.3), live session
+    status/lock-gated read+write RLS and the Bridge's `interactive_blocks`
+    public-read policy (§7.6/§7.8), team invites end-to-end including the
+    sign-up trigger (§7.12), and course comments' RLS + column-level grant
+    (§7.12). This formalizes checks that had previously been re-derived by
+    hand, from scratch, every session — a real regression (verified by
+    deliberately breaking an assertion and a `WHERE` clause during
+    development) now fails loudly with a clear message instead of relying
+    on a human re-reading `psql` output. There's still no Docker in this
+    repo's dev/CI sandbox, so this is a plain-`psql` harness rather than
+    `supabase start` + pgTAP — see the stub file's own comments for
+    exactly what it fakes and why (and the parts of §7.3/§7.6/§7.8 that
+    remain genuinely unverified regardless — real Storage uploads and
+    real Realtime WebSocket delivery — since no amount of RLS testing
+    substitutes for those services actually running).
+- Not built: end-to-end/browser tests (Playwright etc.) — the dev-server
+  smoke tests done by hand throughout this build (curl a route, check for
+  a 500) are the closest thing so far, and remain manual.
 - Production Supabase project (this has only been run against a local
   Supabase instance so far) + Vercel deployment for `apps/web` + hosting
   for the Node worker once §7.5/§7.10 need it.
