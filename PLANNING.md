@@ -826,8 +826,30 @@ slice; a few things explicitly deferred to §7.7/later.
 - Production Supabase project (this has only been run against a local
   Supabase instance so far) + Vercel deployment for `apps/web` + hosting
   for the Node worker once §7.5/§7.10 need it.
-- Rate limiting on public, unauthenticated endpoints (`/join/[code]`,
-  published course links) given the anonymous-participation requirement.
+- ~~Rate limiting on public, unauthenticated endpoints~~ Built: a
+  generic `check_rate_limit(key, max_hits, window_seconds)` `SECURITY
+  DEFINER` RPC (migration `0013_rate_limits.sql`) does an atomic
+  check-and-record against a `rate_limit_hits` table that `anon`/
+  `authenticated` have no direct grants on at all — only the function can
+  touch it, so there's no way to read others' keys or forge a hit.
+  Applied to every public write endpoint with a real abuse/brute-force
+  angle: course password verification (10 attempts/10min, keyed by
+  IP+slug — the classic brute-force case, and the only one of these with
+  no prior identity to key by at all), joining a live session by code (20/
+  min, keyed by IP), and every live-session/Bridge response, Q&A
+  question, and upvote (keyed by the existing participant/learner token,
+  generous limits like 30/min that only bite a scripted flood, not a fast
+  human). `lib/rateLimit/check.ts` fails *open* (allows the request) on
+  an infra error, deliberately — an abuse check going down shouldn't take
+  the feature it protects down with it. Learner-progress writes and
+  authenticated studio mutations were deliberately left unlimited: they
+  either aren't public-facing spam surfaces or already have a natural
+  one-row-per-learner-per-lesson ceiling from the `learner_progress`
+  unique index (§7.4). **Verified** against a real local Postgres: exactly
+  `max_hits` calls succeed and the next one is rejected, a different key
+  is an independent bucket, a `0`-second window never accumulates, and a
+  direct `INSERT`/`SELECT` against `rate_limit_hits` as `anon` is rejected
+  outright (only the RPC can touch it).
 - Email confirmation flow: currently whatever Supabase Auth's project
   default is; worth an explicit decision once this leaves local dev.
 

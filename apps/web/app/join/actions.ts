@@ -7,8 +7,16 @@ import {
   getParticipantToken,
   getParticipantDisplayName,
 } from "@/lib/live/participant";
+import { checkRateLimit } from "@/lib/rateLimit/check";
+import { getClientIp } from "@/lib/rateLimit/clientIp";
 
 export async function joinSession(code: string, formData: FormData) {
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(`join-session:${ip}`, 20, 60);
+  if (!allowed) {
+    return { error: "Too many attempts. Try again in a minute." };
+  }
+
   const displayName = String(formData.get("displayName") ?? "").trim();
   const supabase = await createClient();
   const { data: liveSession } = await supabase
@@ -28,6 +36,7 @@ export async function joinSession(code: string, formData: FormData) {
 export async function submitPollResponse(slideId: string, sessionId: string, choiceIndices: number[]) {
   const token = await getParticipantToken(sessionId);
   if (!token) return;
+  if (!(await checkRateLimit(`live-response:${token}`, 30, 60))) return;
   const displayName = await getParticipantDisplayName(sessionId);
   const supabase = await createClient();
   await supabase.from("live_responses").insert({
@@ -41,6 +50,7 @@ export async function submitPollResponse(slideId: string, sessionId: string, cho
 export async function submitTextResponse(slideId: string, sessionId: string, text: string) {
   const token = await getParticipantToken(sessionId);
   if (!token || !text.trim()) return;
+  if (!(await checkRateLimit(`live-response:${token}`, 30, 60))) return;
   const displayName = await getParticipantDisplayName(sessionId);
   const supabase = await createClient();
   await supabase.from("live_responses").insert({
@@ -60,6 +70,7 @@ export async function submitQuizAnswer(
 ) {
   const token = await getParticipantToken(sessionId);
   if (!token) return;
+  if (!(await checkRateLimit(`live-response:${token}`, 30, 60))) return;
   const displayName = await getParticipantDisplayName(sessionId);
   const supabase = await createClient();
   await supabase.from("live_responses").insert({
@@ -75,6 +86,7 @@ export async function submitQuizAnswer(
 export async function submitQuestion(sessionId: string, text: string, anonymous: boolean) {
   const token = await getParticipantToken(sessionId);
   if (!token || !text.trim()) return;
+  if (!(await checkRateLimit(`qa-question:${token}`, 10, 60))) return;
   const displayName = anonymous ? null : await getParticipantDisplayName(sessionId);
   const supabase = await createClient();
   await supabase.from("qa_questions").insert({
@@ -88,6 +100,7 @@ export async function submitQuestion(sessionId: string, text: string, anonymous:
 export async function upvoteQuestion(questionId: string, sessionId: string) {
   const token = await getParticipantToken(sessionId);
   if (!token) return;
+  if (!(await checkRateLimit(`qa-upvote:${token}`, 60, 60))) return;
   const supabase = await createClient();
   await supabase.from("qa_upvotes").insert({ question_id: questionId, participant_token: token });
 }

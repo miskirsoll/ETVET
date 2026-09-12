@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateLearnerKey } from "@/lib/learner/session";
+import { checkRateLimit } from "@/lib/rateLimit/check";
+import { getClientIp } from "@/lib/rateLimit/clientIp";
 import type { LearnerProgress, Question, QuestionChoice } from "@/lib/types/db";
 
 /**
@@ -20,6 +22,12 @@ async function bridgeParticipantToken(): Promise<string> {
 }
 
 export async function verifyCoursePassword(slug: string, formData: FormData) {
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(`course-password:${slug}:${ip}`, 10, 10 * 60);
+  if (!allowed) {
+    return { error: "Too many attempts. Try again in a few minutes." };
+  }
+
   const password = String(formData.get("password") ?? "");
   const supabase = await createClient();
   const { data: course } = await supabase
@@ -146,6 +154,9 @@ export async function submitBridgeResponse(
   response: Record<string, unknown>
 ) {
   const token = await bridgeParticipantToken();
+  const allowed = await checkRateLimit(`bridge-response:${token}`, 30, 60);
+  if (!allowed) return;
+
   const supabase = await createClient();
   await supabase.from("live_responses").insert({
     live_slide_id: liveSlideId,
