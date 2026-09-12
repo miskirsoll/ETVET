@@ -648,17 +648,42 @@ slice; a few things explicitly deferred to §7.7/later.
 - Needs a live Stripe account/API keys — same "don't fake it" reasoning
   as AI.
 
-### 7.12 Roles/RBAC completeness — S/M
+### 7.12 Roles/RBAC completeness — S/M — **team invites built**
 
-- Team invite flow: right now every sign-up creates a **new** org (by
-  design, for a fast solo-user path); there's no way yet to invite a
-  teammate into an *existing* org as Author/Trainer/Reviewer. Needed for
-  the spec's "team authoring" line and for MAXPRO's Trainer role to
-  matter across multiple people.
-- Reviewer/Stakeholder role: read-only preview links with commenting
-  (spec's "Review-360-style" feedback), not yet touched.
-- Super Admin console: cross-org platform management — lowest priority
-  of the roles, since it's an internal/operator surface, not customer-facing.
+- ~~Team invite flow~~ Built: `/studio/team` (ORG_ADMIN only, linked from
+  the studio nav for admins) lists org members and lets an admin generate
+  a shareable invite link for the Author/Trainer/Reviewer roles. There's
+  no outbound email in this build — the admin copies the link and sends
+  it themselves, same "no real external service in the sandbox, so make
+  the manual path first-class" approach as `/upgrade`'s tier switcher.
+  `/signup?invite=<token>` shows "Join `<org>` as `<role>`" instead of the
+  org-name field, and the sign-up trigger (`handle_new_auth_user`,
+  migration `0011_invites.sql`) joins the inviting org with that role
+  instead of minting a new one when a valid `invite_token` rides along in
+  the new auth user's metadata. An invalid, expired, or already-accepted
+  token falls back to the original "create your own org" behavior rather
+  than blocking sign-up outright.
+- New `org_invites` table: RLS restricts all direct access to same-org
+  `ORG_ADMIN`s only (`for all`, no public-read policy) — a token lookup
+  instead goes through a `get_invite_by_token()` `SECURITY DEFINER` RPC
+  that returns only the one matching row's org name/role/validity, so
+  there's no `using (true)`-style policy that would let anyone enumerate
+  every org's pending invites via a bare table scan.
+- **Verified** against a real local Postgres end-to-end: an `ORG_ADMIN`
+  can create an invite; a non-admin `AUTHOR` in the same org is rejected
+  by RLS; a different org's `ORG_ADMIN` can neither see nor delete the
+  invite; `anon` can resolve a valid token (and gets zero rows for a
+  bogus one) via the RPC; signing up with the token joins the correct
+  org+role and marks the invite accepted; re-using that now-accepted
+  token, a garbage token, and an expired token (confirmed `valid: false`
+  via the RPC first) all fall back cleanly to a brand-new org rather than
+  erroring or double-joining.
+- Not built: Reviewer/Stakeholder read-only preview links with commenting
+  (spec's "Review-360-style" feedback) — the REVIEWER role can now be
+  *assigned* via invite, but nothing in the app yet treats it differently
+  from AUTHOR (no read-only enforcement, no commenting UI). Super Admin
+  console: cross-org platform management — still lowest priority, internal/
+  operator surface, not customer-facing.
 
 ### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit
 

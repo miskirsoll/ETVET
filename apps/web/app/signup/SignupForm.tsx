@@ -6,7 +6,7 @@ import { signUp } from "../login/actions";
 
 type ActionState = { error?: string } | undefined;
 
-export function SignupForm() {
+export function SignupForm({ inviteToken }: { inviteToken?: string }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     async (_prev, formData) => signUp(formData),
     undefined
@@ -14,15 +14,18 @@ export function SignupForm() {
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        Organization name
-        <input
-          type="text"
-          name="orgName"
-          required
-          className="rounded border border-black/10 px-3 py-2 dark:border-white/20"
-        />
-      </label>
+      {inviteToken && <input type="hidden" name="inviteToken" value={inviteToken} />}
+      {!inviteToken && (
+        <label className="flex flex-col gap-1 text-sm">
+          Organization name
+          <input
+            type="text"
+            name="orgName"
+            required
+            className="rounded border border-black/10 px-3 py-2 dark:border-white/20"
+          />
+        </label>
+      )}
       <label className="flex flex-col gap-1 text-sm">
         Your name
         <input
@@ -56,7 +59,7 @@ export function SignupForm() {
         disabled={pending}
         className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
       >
-        {pending ? "Creating account…" : "Create organization"}
+        {pending ? "Creating account…" : inviteToken ? "Join team" : "Create organization"}
       </button>
       <p className="text-sm text-black/60 dark:text-white/60">
         Already have an account? <Link href="/login" className="underline">Sign in</Link>

@@ -68,3 +68,11 @@ export async function requireRole(...allowed: OrgRole[]): Promise<Session> {
   if (!allowed.includes(session.appUser.role)) throw new RoleError(allowed);
   return session;
 }
+
+/** Page-level RBAC guard: redirects instead of throwing, for use in Server Components. */
+export async function requireRoleOrRedirect(...allowed: OrgRole[]): Promise<Session> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!allowed.includes(session.appUser.role)) redirect("/studio");
+  return session;
+}

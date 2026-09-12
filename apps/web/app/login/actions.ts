@@ -20,7 +20,8 @@ export async function signUp(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const orgName = String(formData.get("orgName") ?? "");
   const displayName = String(formData.get("displayName") ?? "");
-  if (!email || !password || !orgName) {
+  const inviteToken = String(formData.get("inviteToken") ?? "") || null;
+  if (!email || !password || (!orgName && !inviteToken)) {
     return { error: "Email, password, and organization name are required." };
   }
 
@@ -28,7 +29,9 @@ export async function signUp(formData: FormData) {
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { org_name: orgName, display_name: displayName } },
+    options: {
+      data: { org_name: orgName, display_name: displayName, invite_token: inviteToken },
+    },
   });
   if (error) return { error: error.message };
 

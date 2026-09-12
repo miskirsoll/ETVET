@@ -26,6 +26,19 @@ export interface AppUser {
   created_at: string;
 }
 
+export interface OrgInvite {
+  id: string;
+  org_id: string;
+  role: OrgRole;
+  token: string;
+  created_by: string | null;
+  email: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  accepted_by: string | null;
+  created_at: string;
+}
+
 export interface ThemeColors {
   primary: string;
   background: string;

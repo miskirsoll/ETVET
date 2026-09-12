@@ -27,6 +27,11 @@ export default async function StudioLayout({
             <Link href="/studio/live" className="hover:underline">
               Live Sessions
             </Link>
+            {session.appUser.role === "ORG_ADMIN" && (
+              <Link href="/studio/team" className="hover:underline">
+                Team
+              </Link>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
