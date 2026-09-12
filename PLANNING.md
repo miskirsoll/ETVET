@@ -172,3 +172,232 @@ Not yet built: Quiz Lesson content editing (step 3), theming/publish/SCORM
 created structurally (they show a placeholder in the editor) since the
 outline needs both lesson types to be a real test of the drag-and-drop
 reordering.
+
+## 7. Remaining work — detailed
+
+Everything below is what's left to reach the spec's "fully functional"
+platform. Grouped by workstream, roughly in build order; sizes are rough
+relative effort (S/M/L/XL), not calendar time. **One structural gap not
+called out as its own numbered step before:** there is currently no
+learner-facing public rendering of a course at all — everything built so
+far is the authoring side only. Preview, publish, progress tracking, SCORM
+export, and Bridge async mode all depend on that renderer existing, so it's
+folded into §7.4 rather than treated as implicit.
+
+### 7.1 Quiz Lesson editor (build order step 3) — L
+
+- Schema: `question_banks`, `questions`, `question_choices` (referenced in
+  the spec's data model, not yet migrated).
+- Question types: multiple choice, multiple response, true/false,
+  fill-in-the-blank, matching (drag-to-pair) — MVP order per the plan is
+  multiple choice + true/false first, the rest after.
+- Per-choice feedback text, pass/fail threshold, retry limits, scored vs.
+  practice (ungraded) mode, optional per-quiz timer.
+- Randomized draw from a question bank per attempt.
+- A quiz-taking runtime (grading logic + score computation) — this is
+  separate from the editor and is only exercised once §7.4's public
+  renderer exists.
+
+### 7.2 Theming & branding — M
+
+- Theme editor UI over the `themes` table (already migrated, never
+  surfaced in the UI): color palette, font picker + custom font upload,
+  logo upload, cover photo (own upload or a stock library), layout choice,
+  block-entrance-animation toggle.
+- Apply the selected theme when rendering both the authoring preview and
+  the published course.
+- Depends on §7.3 for font/logo/cover uploads.
+
+### 7.3 Media storage & uploads — M
+
+- Supabase Storage buckets (images, video, audio, fonts, logos) with
+  per-org path scoping and per-tier storage limits (spec: "limited" on
+  FREE, "extended" on PRO/MAXPRO).
+- Replace the current URL-only image/video blocks with real upload
+  widgets; add the image-cropping tool the spec calls out.
+- Audio block with upload **and** in-browser recording.
+- Extend RLS-equivalent access rules to Storage policies (bucket policies
+  mirroring the `org_id` scoping already enforced on the tables).
+
+### 7.4 Preview, publish, and the public learner experience — XL
+
+The biggest single gap. Needed by theming, SCORM, progress tracking, and
+Bridge async mode alike, so it's worth sequencing right after quizzes:
+
+- A new, unauthenticated route tree that renders a **published** course
+  for learners (e.g. `/c/[slug]`, optionally gated by `publish_password`,
+  both already columns on `courses`) — reads the same
+  course/section/lesson/block data but through the public RLS policies
+  already in place, with no `/studio` chrome.
+- Renders every block type built so far, applies the course's theme, and
+  respects `nav_settings` (sidebar visible/hidden/off, free vs.
+  must-complete-in-order navigation, in-course search).
+- Responsive preview mode inside the authoring UI: desktop/tablet/mobile
+  frame toggle over that same renderer, pre-publish.
+- "Publish" action on the course dashboard: flips `status` to
+  `PUBLISHED`, generates/edits the `publish_slug`, sets/clears
+  `publish_password`.
+- Learner progress tracking against `learner_progress` (migrated, unused
+  so far): per-lesson completion, quiz score, time spent, tied to an
+  authenticated learner or an anonymous token cookie. Continue blocks
+  (progressive reveal) become meaningful here — currently just stored
+  config with no runtime behavior.
+- Quiz-taking flow from §7.1 plugs in here (this is where a learner
+  actually takes a quiz and a score gets written).
+
+### 7.5 SCORM export for Moodle (build order step 5) — XL
+
+- The Node worker service from the architecture decision (§2.1,
+  `apps/scorm-worker` or similar) doesn't exist yet — this is the one
+  piece that doesn't fit cleanly as a Next.js route (real filesystem/zip
+  work, needs to run outside the request/response cycle).
+- Package the §7.4 renderer's output as static HTML/CSS/JS/assets,
+  self-contained, no calls back to ETVET's servers for content to render.
+- `imsmanifest.xml` (SCORM 1.2, single-SCO default) + the
+  `LMSInitialize/GetValue/SetValue/Commit/Finish/GetLastError` JS runtime
+  adapter.
+- Map to `cmi.core.lesson_status`, `cmi.core.score.raw`,
+  `cmi.core.session_time`; resume via compact `cmi.suspend_data`
+  (lesson/block index + answered-question IDs, not full state, to fit
+  under the strict 4096-char limit).
+- Server-side manifest/package validation gate before the download is
+  served, with a clear error instead of a broken zip on failure.
+- Post-download in-app checklist for uploading into Moodle.
+- A generic SCORM 2004/xAPI/AICC/cmi5 export for other LMSs is explicitly
+  lower priority (build order step 11) — get Moodle's SCORM 1.2 path right
+  first.
+
+### 7.6 Live Interactive Sessions — Module B (build order step 6) — XL
+
+The single largest remaining workstream, and the first genuinely new
+schema surface since Foundation:
+
+- Schema: `live_sessions`, `live_slides`, `live_responses`,
+  `qa_questions` — all referenced in the spec's data model, none migrated
+  yet.
+- Session builder UI: ordered slide deck, at minimum poll, word cloud,
+  open-ended text, scale, ranking, quiz/leaderboard (with countdown timer
+  and speed-scored points), Q&A board (optionally anonymous, upvoting,
+  moderation), reaction overlay, and the "100 points" allocation slide.
+- Join flow: `/join/[code]`, QR code generation, short join code, anonymous
+  short-lived session tokens (no account required) — this is the first
+  place actual anonymous participation (distinct from anonymous *learner*
+  progress in §7.4) enters the schema.
+- Realtime fan-out via Supabase Realtime (per the §2.4 decision) so
+  responses update the presenter's and participants' screens in
+  well under a second, with graceful reconnect on a dropped connection.
+- Scale target from the spec: 1,000+ concurrent anonymous participants per
+  session — worth a load-test pass before calling this done, since it's
+  the platform's one hard real-time scaling requirement.
+
+### 7.7 Present mode (build order step 7) — L
+
+- Big-screen view (cast/projector) showing the current slide and live
+  results.
+- Presenter-only control panel: response counts, next-slide, lock/unlock
+  voting, reset results, skip/reopen a slide, Q&A moderation queue,
+  session pause/resume, live participant count.
+- Post-session results page per session: per-slide breakdown, CSV export.
+- Session library: duplicate/reuse a past session as a template.
+
+### 7.8 The Bridge — Module C (build order step 8) — M
+
+- Add the "Interactive Block" type to the Block Lesson editor (the
+  `interactive_blocks` table already exists, bridging a `block_id` to a
+  `live_session_id` + `sync`/`async` mode — schema was scaffolded early
+  deliberately for this).
+- Sync mode: block becomes a join point into a live, presenter-controlled
+  session in progress.
+- Async mode: block renders the poll/quiz/word-cloud directly inside the
+  §7.4 course renderer, self-paced, showing a running aggregate with no
+  presenter needed.
+- Both gated `requireTier("MAXPRO")`, following the same
+  `<LockedFeature>` pattern already used for `/studio/live`.
+
+### 7.9 Unified analytics dashboard (build order step 9) — M
+
+- Per course: completion rate, average quiz score, aggregated results
+  from any embedded interactive blocks, in one view (MAXPRO only).
+- Depends on real data existing in `learner_progress` (§7.4), quiz
+  attempts (§7.1), and `live_responses`/interactive blocks (§7.6/§7.8) —
+  sequenced last among the feature work for that reason.
+
+### 7.10 AI features (build order step 10) — L
+
+- AI Course Draft: prompt/topic or pasted source → generated outline +
+  draft block content, via an LLM API (Claude, per the spec's suggested
+  architecture) — runs from the Node worker or a server action with a
+  longer timeout budget, not a typical request/response route.
+- AI quiz generator from lesson content or a source document.
+- AI live-slide generator (mixed poll/quiz/word-cloud deck from a
+  prompt/topic/document), and auto-suggesting a relevant slide from an
+  adjacent lesson's content (the spec's own "platform-unique bridge"
+  feature on the AI side).
+- In-course AI tutor chatbot (MAXPRO only), course-content-aware.
+- Needs a real Anthropic API key wired into environment config; until
+  then these stay unbuilt rather than mocked, since a fake AI response
+  would be actively misleading in a demo.
+
+### 7.11 Real payments — M
+
+- Replace the `/upgrade` tier-flip stub with real Stripe Checkout +
+  webhook → the webhook sets `subscription_tier` on `organizations`,
+  reusing every existing `requireTier()` call site unchanged.
+- Needs a live Stripe account/API keys — same "don't fake it" reasoning
+  as AI.
+
+### 7.12 Roles/RBAC completeness — S/M
+
+- Team invite flow: right now every sign-up creates a **new** org (by
+  design, for a fast solo-user path); there's no way yet to invite a
+  teammate into an *existing* org as Author/Trainer/Reviewer. Needed for
+  the spec's "team authoring" line and for MAXPRO's Trainer role to
+  matter across multiple people.
+- Reviewer/Stakeholder role: read-only preview links with commenting
+  (spec's "Review-360-style" feedback), not yet touched.
+- Super Admin console: cross-org platform management — lowest priority
+  of the roles, since it's an internal/operator surface, not customer-facing.
+
+### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit
+
+- Full keyboard navigation, screen-reader compatibility, alt-text fields
+  on every image block, caption/transcript support on video/audio,
+  enforced color-contrast in the theme editor (§7.2).
+- Best treated as a standing requirement on every new UI PR rather than
+  a single step, plus one dedicated audit pass before calling any tier
+  "launch ready."
+
+### 7.14 Testing & production readiness — M, ongoing
+
+- No automated tests exist yet (unit or e2e) — worth introducing
+  alongside §7.1/§7.4 rather than after, given how much RLS/tier-gating
+  logic already exists to regress against.
+- Production Supabase project (this has only been run against a local
+  Supabase instance so far) + Vercel deployment for `apps/web` + hosting
+  for the Node worker once §7.5/§7.10 need it.
+- Rate limiting on public, unauthenticated endpoints (`/join/[code]`,
+  published course links) given the anonymous-participation requirement.
+- Email confirmation flow: currently whatever Supabase Auth's project
+  default is; worth an explicit decision once this leaves local dev.
+
+### 7.15 Polish / stretch (build order step 11) — after everything above
+
+Generic SCORM 2004/xAPI/AICC/cmi5 export for non-Moodle LMSs,
+white-labeling/custom domain, localization/translation (including
+AI-assisted translation from §7.10), full accessibility certification.
+
+## 8. Suggested sequencing
+
+Respecting the dependencies above, in one straight line:
+
+1. §7.1 Quiz editor → 2. §7.4 Public renderer + preview/publish/progress
+(unlocks the most downstream work) → 3. §7.2 Theming + §7.3 Media uploads
+(can run in parallel with each other, both need §7.4's renderer to show
+results in) → 4. §7.5 SCORM export (closes out Module A / PRO tier being
+complete) → 5. §7.6 Live Sessions → 6. §7.7 Present mode → 7. §7.8 The
+Bridge → 8. §7.9 Unified analytics → 9. §7.10 AI features + §7.11 Payments
+(both gated on real API keys, can slot in whenever those are available) →
+10. §7.12 Roles/RBAC completeness → 11. §7.15 Polish.
+
+§7.13 (accessibility) and §7.14 (testing/production readiness) run
+alongside all of the above rather than waiting for a dedicated slot.
