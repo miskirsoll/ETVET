@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Studio chrome's own brand accent (distinct from an author's
+     per-course theme.colors, which only style the public renderer).
+     --brand/--brand-foreground are for solid filled chips (buttons,
+     badges) -- their internal contrast doesn't depend on the page
+     background, so they stay the same indigo-600/white in both modes
+     (6.29:1, comfortably WCAG AA). --brand-text is for brand color used
+     directly ON the page background (links, icons, active-nav
+     indicators) -- indigo-600 on white is 6.29:1, but indigo-600 on the
+     dark background is only 3.15:1 (fails AA normal-text), so dark mode
+     shifts it to a lighter indigo-400 (6.64:1 on the dark background)
+     instead. Verified with lib/theme/contrast.ts's own math. */
+  --brand: #4f46e5;
+  --brand-foreground: #ffffff;
+  --brand-text: #4f46e5;
+  --brand-subtle: #eef2ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-text: var(--brand-text);
+  --color-brand-subtle: var(--brand-subtle);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --brand-text: #818cf8;
+    --brand-subtle: rgba(99, 102, 241, 0.15);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Theme "block entrance animations" toggle, applied per-block in the
+   public course renderer. */
+@keyframes etvet-block-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.etvet-animate-in {
+  animation: etvet-block-in 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etvet-animate-in {
+    animation: none;
+  }
+}

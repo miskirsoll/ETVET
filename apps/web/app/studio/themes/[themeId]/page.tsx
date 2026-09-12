@@ -1,0 +1,25 @@
+import { notFound } from "next/navigation";
+import { requireTierOrRedirect } from "@/lib/auth/requireTier";
+import { createClient } from "@/lib/supabase/server";
+import { BackLink } from "@/components/BackLink";
+import type { Theme } from "@/lib/types/db";
+import { ThemeEditor } from "./ThemeEditor";
+
+export default async function ThemeEditPage({
+  params,
+}: {
+  params: Promise<{ themeId: string }>;
+}) {
+  const session = await requireTierOrRedirect("PRO");
+  const { themeId } = await params;
+  const supabase = await createClient();
+  const { data: theme } = await supabase.from("themes").select("*").eq("id", themeId).single();
+  if (!theme) notFound();
+
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <BackLink href="/studio/themes">Back to themes</BackLink>
+      <ThemeEditor theme={theme as Theme} orgId={session.org.id} />
+    </div>
+  );
+}
