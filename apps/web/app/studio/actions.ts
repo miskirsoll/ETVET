@@ -240,6 +240,7 @@ const DEFAULT_BLOCK_CONTENT: Record<BlockType, Block["content"]> = {
   list: { items: ["First item", "Second item"], style: "bulleted" },
   image: { url: "", alt: "" },
   video: { url: "" },
+  audio: { url: "" },
   divider: {},
   continue: { label: "Continue" },
   button: { label: "Next", target_type: "next" },

@@ -144,6 +144,7 @@ export type BlockType =
   | "list"
   | "image"
   | "video"
+  | "audio"
   | "divider"
   | "continue"
   | "button";

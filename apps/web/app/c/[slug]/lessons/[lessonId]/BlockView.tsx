@@ -102,6 +102,10 @@ function renderBlock(
           />
         </div>
       ) : null;
+    case "audio":
+      return block.content.url ? (
+        <audio controls src={String(block.content.url)} className="w-full" />
+      ) : null;
     case "divider":
       return <hr className="border-black/10 dark:border-white/10" />;
     case "continue":

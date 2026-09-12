@@ -27,6 +27,7 @@ const BLOCK_TYPES: { type: BlockType; label: string }[] = [
   { type: "list", label: "List" },
   { type: "image", label: "Image" },
   { type: "video", label: "Video" },
+  { type: "audio", label: "Audio" },
   { type: "divider", label: "Divider" },
   { type: "continue", label: "Continue" },
   { type: "button", label: "Button" },
@@ -227,6 +228,15 @@ function BlockFields({
         <input
           className={inputClass}
           placeholder="Video URL or embed link (e.g. YouTube)"
+          defaultValue={String(block.content.url ?? "")}
+          onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
+        />
+      );
+    case "audio":
+      return (
+        <input
+          className={inputClass}
+          placeholder="Audio file URL (e.g. hosted mp3)"
           defaultValue={String(block.content.url ?? "")}
           onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
         />
