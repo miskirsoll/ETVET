@@ -1,5 +1,6 @@
 import { requireRoleOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
+import { Avatar } from "@/components/Avatar";
 import type { AppUser, OrgInvite } from "@/lib/types/db";
 import { InviteForm } from "./InviteForm";
 import { InviteList } from "./InviteList";
@@ -33,13 +34,21 @@ export default async function TeamPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Members</h2>
-        <ul className="flex flex-col divide-y divide-black/10 rounded border border-black/10 dark:divide-white/10 dark:border-white/10">
-          {((members ?? []) as AppUser[]).map((m) => (
-            <li key={m.id} className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>{m.display_name || "(no name set)"}</span>
-              <span className="text-black/50 dark:text-white/50">{m.role}</span>
-            </li>
-          ))}
+        <ul className="flex flex-col divide-y divide-black/10 rounded border border-black/10 shadow-sm dark:divide-white/10 dark:border-white/10">
+          {((members ?? []) as AppUser[]).map((m) => {
+            const name = m.display_name || "(no name set)";
+            return (
+              <li key={m.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                <span className="flex items-center gap-2">
+                  <Avatar name={name} />
+                  {name}
+                </span>
+                <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60 dark:bg-white/10 dark:text-white/60">
+                  {m.role}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </section>
 

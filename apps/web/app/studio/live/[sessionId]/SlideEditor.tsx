@@ -18,6 +18,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Trash2 } from "lucide-react";
 import type { LiveSlide, LiveSlideType } from "@/lib/types/db";
 import { createSlide, updateSlideConfig, deleteSlide, reorderSlides } from "../actions";
 
@@ -121,7 +122,7 @@ function SortableSlide({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="rounded border border-black/10 p-4 dark:border-white/10"
+      className="rounded border border-black/10 p-4 shadow-sm dark:border-white/10"
     >
       <div className="mb-3 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
         <button
@@ -129,11 +130,13 @@ function SortableSlide({
           {...listeners}
           type="button"
           aria-label={`Drag to reorder slide ${index + 1}`}
-          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+          className="flex cursor-grab items-center gap-1.5 bg-transparent p-0 uppercase tracking-wide"
         >
-          ⠿ Slide {index + 1} — {slide.type.replace("_", " ")}
+          <GripVertical className="h-4 w-4" aria-hidden />
+          Slide {index + 1} — {slide.type.replace("_", " ")}
         </button>
-        <button onClick={onDelete} className="text-red-600 hover:underline">
+        <button onClick={onDelete} className="flex items-center gap-1 text-red-600 hover:underline">
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
           Delete
         </button>
       </div>

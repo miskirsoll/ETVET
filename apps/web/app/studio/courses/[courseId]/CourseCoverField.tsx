@@ -27,7 +27,7 @@ export function CourseCoverField({
   }
 
   return (
-    <div className="flex items-center gap-4 rounded border border-black/10 p-4 dark:border-white/10">
+    <div className="flex items-center gap-4 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="Course cover" className="h-16 w-28 rounded object-cover" />

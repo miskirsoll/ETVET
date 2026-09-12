@@ -18,6 +18,8 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, HelpCircle, Trash2, X } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import type { Lesson, Question, QuestionChoice, QuestionType } from "@/lib/types/db";
 import {
   createQuestion,
@@ -115,9 +117,7 @@ export function QuizEditor({
       </DndContext>
 
       {questions.length === 0 && (
-        <p className="text-sm text-black/50 dark:text-white/50">
-          No questions yet — add one below.
-        </p>
+        <EmptyState icon={HelpCircle} title="No questions yet — add one below." />
       )}
 
       <div className="flex flex-wrap gap-2 border-t border-black/10 pt-4 dark:border-white/10">
@@ -262,7 +262,7 @@ function SortableQuestion({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="rounded border border-black/10 p-4 dark:border-white/10"
+      className="rounded border border-black/10 p-4 shadow-sm dark:border-white/10"
     >
       <div className="mb-3 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
         <button
@@ -270,11 +270,13 @@ function SortableQuestion({
           {...listeners}
           type="button"
           aria-label={`Drag to reorder question ${index + 1}`}
-          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+          className="flex cursor-grab items-center gap-1.5 bg-transparent p-0 uppercase tracking-wide"
         >
-          ⠿ Question {index + 1} — {question.type.replace("_", " ")}
+          <GripVertical className="h-4 w-4" aria-hidden />
+          Question {index + 1} — {question.type.replace("_", " ")}
         </button>
-        <button onClick={onDelete} className="text-red-600 hover:underline">
+        <button onClick={onDelete} className="flex items-center gap-1 text-red-600 hover:underline">
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
           Delete
         </button>
       </div>
@@ -312,8 +314,12 @@ function SortableQuestion({
               <span className="flex-1">{choice.text}</span>
             )}
             {canAddChoices && (
-              <button onClick={() => removeOption(choice.id)} className="text-red-600 hover:underline">
-                Remove
+              <button
+                onClick={() => removeOption(choice.id)}
+                aria-label="Remove this choice"
+                className="text-red-600 hover:underline"
+              >
+                <X className="h-4 w-4" aria-hidden />
               </button>
             )}
           </li>

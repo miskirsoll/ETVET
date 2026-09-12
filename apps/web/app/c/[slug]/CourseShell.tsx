@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check, Lock, X } from "lucide-react";
 import type { Course, Lesson, LearnerProgress, Section, Theme } from "@/lib/types/db";
 import { flattenLessonOrder } from "./data";
 
@@ -16,8 +17,12 @@ function isUnlocked(
 }
 
 function statusBadge(status?: LearnerProgress["status"]) {
-  if (status === "completed" || status === "passed") return "✓";
-  if (status === "failed") return "✗";
+  if (status === "completed" || status === "passed") {
+    return <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" aria-hidden />;
+  }
+  if (status === "failed") {
+    return <X className="h-3.5 w-3.5 text-red-600 dark:text-red-400" aria-hidden />;
+  }
   return null;
 }
 
@@ -77,8 +82,12 @@ export function CourseShell({
                   const isActive = lesson.id === activeLessonId;
                   if (!unlocked) {
                     return (
-                      <li key={lesson.id} className="text-black/30 dark:text-white/30">
-                        🔒 {lesson.title}
+                      <li
+                        key={lesson.id}
+                        className="flex items-center gap-1.5 text-black/30 dark:text-white/30"
+                      >
+                        <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        {lesson.title}
                       </li>
                     );
                   }
@@ -86,10 +95,10 @@ export function CourseShell({
                     <li key={lesson.id}>
                       <Link
                         href={`/c/${course.publish_slug}/lessons/${lesson.id}`}
-                        className={isActive ? "font-semibold underline" : "hover:underline"}
+                        className={`inline-flex items-center gap-1.5 ${isActive ? "font-semibold underline" : "hover:underline"}`}
                         style={isActive && accentColor ? { color: accentColor } : undefined}
                       >
-                        {badge && <span className="mr-1">{badge}</span>}
+                        {badge}
                         {lesson.title}
                       </Link>
                     </li>

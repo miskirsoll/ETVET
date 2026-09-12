@@ -878,6 +878,70 @@ Generic SCORM 2004/xAPI/AICC/cmi5 export for non-Moodle LMSs,
 white-labeling/custom domain, localization/translation (including
 AI-assisted translation from §7.10), full accessibility certification.
 
+### 7.16 Visual design / UI polish — **done, first pass**
+
+The app was built feature-first: every screen used the same grayscale
+`border-black/10`/`bg-black/5`/`text-black/50` palette, zero shadows,
+zero gradients, and every "icon" was a raw Unicode/emoji character
+(`⠿` drag handles, `←`/`→` nav arrows, `✓`/`✗`/`⚠`/`🔒`/`▲`/`•`). A
+dedicated pass (triggered by a direct ask to make the UI richer)
+addressed this across the whole app:
+
+- **Icons**: installed `lucide-react`; replaced every Unicode/emoji
+  stand-in found by a full-repo audit with a real icon, including
+  converting several non-focusable `<span>` drag handles (a couple
+  icon-only, no accessible name at all) to real `<button>`s with
+  `aria-label`s while at it.
+- **Brand identity**: `globals.css` had exactly two colors
+  (`--background`/`--foreground`, black/white) — added `--brand`/
+  `--brand-foreground` (solid filled buttons/badges, indigo-600 on
+  white, same in both themes) and `--brand-text`/`--brand-subtle` (brand
+  color used directly on the page background — indigo-600 in light
+  mode, shifted to a lighter indigo-400 in dark mode specifically
+  because indigo-600 on the dark background alone is 3.15:1, under
+  WCAG AA's 4.5:1 normal-text threshold; verified with `lib/theme/
+  contrast.ts`'s own math, not just eyeballed). Added a small logomark
+  (`components/Logo.tsx`) next to the "ETVET" wordmark in the studio
+  header, home page, and login/signup; a real `app/icon.svg` app icon
+  matching it (replacing the untouched Next.js default favicon.ico);
+  basic OpenGraph metadata and a `theme-color`; removed the five unused
+  `create-next-app` stock SVGs that were never referenced anywhere.
+  This is a Studio-chrome-only identity — the public course renderer's
+  `theme.colors` (an author's own per-course branding, §7.2) is
+  untouched, deliberately not overridden by it.
+- **Empty states**: new `components/EmptyState.tsx` (icon + message,
+  optional action) replacing bare gray sentences across every list in
+  the app (courses, themes, live sessions, team invites, comments, quiz
+  questions, blocks, interactive-block analytics, the reviewer preview's
+  outline, the admin org list).
+- **Loading feedback**: new `components/Spinner.tsx`, wired into every
+  pending-state button across the app (previously a text-only label
+  swap like "Saving…" with no visual indicator at all — confirmed zero
+  `spinner`/`skeleton`/`animate-pulse` existed anywhere beforehand).
+- **People**: new `components/Avatar.tsx` (deterministic color-coded
+  initials circle, no upload/image infra needed) applied to comment
+  authors and the team members list, which were plain name strings.
+- **Cards/lists/nav**: added `shadow-sm`/hover-elevation to list rows and
+  panels across the studio, color-coded status pills (course draft/
+  published, live-session draft/live/ended) replacing literal DB-string
+  text, icons on stat cards (analytics, admin), and a client-side
+  `StudioNav` (replacing static nav text) that highlights the current
+  section — there was previously no active-nav indication at all.
+- **Verified**: `npm run lint`, `npm test` (unit), `npm run test:db`
+  (RLS/migrations — unaffected, this was a presentation-only pass) all
+  still pass; re-ran `npm run test:a11y` (the real axe-core scan from
+  §7.13) across every page it can reach and got zero violations after
+  the change, confirming the new icons/buttons/shadows didn't regress
+  the accessibility work from that section.
+- Not done: a dedicated illustration/empty-state graphic set (icons only,
+  no custom artwork); dark-mode-specific screenshots/manual visual QA
+  (no browser available to look at rendered pixels in this sandbox,
+  same limitation as everywhere else — verified via axe's DOM-level
+  checks and the contrast math instead, not by eye); extending the same
+  polish to the *public* course renderer's own chrome (intentionally
+  left to each author's per-course theme rather than imposing the
+  Studio's brand on learner-facing pages).
+
 ## 8. Suggested sequencing
 
 Respecting the dependencies above, in one straight line:

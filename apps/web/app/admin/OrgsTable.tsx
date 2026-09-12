@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Building2 } from "lucide-react";
 import { TierBadge } from "@/components/TierBadge";
+import { EmptyState } from "@/components/EmptyState";
 import type { SubscriptionTier } from "@/lib/types/db";
 import { setOrgTierAsAdmin } from "./actions";
 
@@ -18,11 +20,11 @@ const TIERS: SubscriptionTier[] = ["FREE", "PRO", "MAXPRO"];
 
 export function OrgsTable({ orgs }: { orgs: AdminOrgRow[] }) {
   if (orgs.length === 0) {
-    return <p className="text-sm text-black/50 dark:text-white/50">No organizations yet.</p>;
+    return <EmptyState icon={Building2} title="No organizations yet." />;
   }
 
   return (
-    <table className="w-full overflow-hidden rounded border border-black/10 text-left text-sm dark:border-white/10">
+    <table className="w-full overflow-hidden rounded border border-black/10 text-left text-sm shadow-sm dark:border-white/10">
       <thead className="bg-black/5 dark:bg-white/5">
         <tr>
           <th scope="col" className="px-3 py-2 font-medium">

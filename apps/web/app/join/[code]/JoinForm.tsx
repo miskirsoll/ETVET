@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Spinner } from "@/components/Spinner";
 import { joinSession } from "../actions";
 
 type ActionState = { error?: string } | undefined;
@@ -26,8 +27,9 @@ export function JoinForm({ code }: { code: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
+        className="flex items-center justify-center gap-1.5 rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Joining…" : "Join session"}
       </button>
     </form>

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
+import { BackLink } from "@/components/BackLink";
 import type { LiveSession, LiveSlide } from "@/lib/types/db";
 import { SlideEditor } from "./SlideEditor";
 import { SessionControls } from "./SessionControls";
@@ -30,9 +30,7 @@ export default async function LiveSessionBuilderPage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <Link href="/studio/live" className="text-sm hover:underline">
-        ← Back to sessions
-      </Link>
+      <BackLink href="/studio/live">Back to sessions</BackLink>
       <h1 className="text-2xl font-semibold">{(liveSession as LiveSession).title}</h1>
       <SessionControls session={liveSession as LiveSession} />
       <SlideEditor sessionId={sessionId} initialSlides={(slides ?? []) as LiveSlide[]} />

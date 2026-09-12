@@ -1,7 +1,9 @@
-import Link from "next/link";
+import { Award, ChevronUp, Radio, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { createClient } from "@/lib/supabase/server";
+import { EmptyState } from "@/components/EmptyState";
+import { BackLink } from "@/components/BackLink";
 import { getCourseOutline } from "@/app/c/[slug]/data";
 import { flattenLessonOrder } from "@/lib/course/order";
 import { completionRate, averageQuizScore, distinctLearnerCount } from "@/lib/analytics/compute";
@@ -103,18 +105,18 @@ export default async function CourseAnalyticsPage({
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{course.title} — Analytics</h1>
-        <Link href={`/studio/courses/${courseId}`} className="text-sm underline">
-          Back to course
-        </Link>
+        <BackLink href={`/studio/courses/${courseId}`}>Back to course</BackLink>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Learners started" value={String(learners)} />
+        <StatCard icon={Users} label="Learners started" value={String(learners)} />
         <StatCard
+          icon={TrendingUp}
           label="Completion rate"
           value={rate === null ? "—" : `${Math.round(rate * 100)}%`}
         />
         <StatCard
+          icon={Award}
           label="Avg. quiz score"
           value={avgScore === null ? "—" : `${Math.round(avgScore)}%`}
         />
@@ -123,9 +125,7 @@ export default async function CourseAnalyticsPage({
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-medium">Interactive blocks (The Bridge)</h2>
         {blockIds.length === 0 ? (
-          <p className="text-sm text-black/50 dark:text-white/50">
-            No interactive blocks in this course yet.
-          </p>
+          <EmptyState icon={Radio} title="No interactive blocks in this course yet." />
         ) : (
           ((interactiveBlocks ?? []) as InteractiveBlock[]).map((ib) => {
             const block = blocksById.get(ib.block_id);
@@ -168,11 +168,24 @@ export default async function CourseAnalyticsPage({
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded border border-black/10 p-4 dark:border-white/10">
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className="text-sm text-black/50 dark:text-white/50">{label}</div>
+    <div className="flex items-start gap-3 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
+      <div className="rounded-full bg-brand-subtle p-2 text-brand-text">
+        <Icon className="h-5 w-5" aria-hidden />
+      </div>
+      <div>
+        <div className="text-2xl font-semibold">{value}</div>
+        <div className="text-sm text-black/50 dark:text-white/50">{label}</div>
+      </div>
     </div>
   );
 }
@@ -285,7 +298,10 @@ function SlideSummary({
               className="flex items-center justify-between rounded bg-black/5 px-2 py-1 dark:bg-white/5"
             >
               <span>{q.text}</span>
-              <span className="text-xs text-black/50 dark:text-white/50">▲ {q.upvotes}</span>
+              <span className="flex items-center gap-0.5 text-xs text-black/50 dark:text-white/50">
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+                {q.upvotes}
+              </span>
             </li>
           ))}
         </ul>

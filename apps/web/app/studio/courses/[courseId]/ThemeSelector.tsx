@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/Spinner";
 import type { Theme } from "@/lib/types/db";
 import { setCourseTheme } from "@/app/studio/themes/actions";
 
@@ -38,6 +39,7 @@ export function ThemeSelector({
           </option>
         ))}
       </select>
+      {pending && <Spinner className="h-3.5 w-3.5" />}
     </label>
   );
 }

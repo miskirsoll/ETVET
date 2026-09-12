@@ -20,6 +20,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Trash2 } from "lucide-react";
 import type { Lesson, Section } from "@/lib/types/db";
 import {
   createSection,
@@ -155,7 +156,7 @@ function SortableSection({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="rounded border border-black/10 p-4 dark:border-white/10"
+      className="rounded border border-black/10 p-4 shadow-sm dark:border-white/10"
     >
       <div className="flex items-center justify-between">
         <button
@@ -163,14 +164,16 @@ function SortableSection({
           {...listeners}
           type="button"
           aria-label={`Drag to reorder section: ${section.title}`}
-          className="cursor-grab font-medium"
+          className="flex cursor-grab items-center gap-1.5 font-medium"
         >
-          ⠿ {section.title}
+          <GripVertical className="h-4 w-4 text-black/40 dark:text-white/40" aria-hidden />
+          {section.title}
         </button>
         <button
           onClick={() => deleteSection(courseId, section.id).then(refresh)}
-          className="text-sm text-red-600 hover:underline"
+          className="flex items-center gap-1 text-sm text-red-600 hover:underline"
         >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
           Delete section
         </button>
       </div>
@@ -236,7 +239,7 @@ function SortableLesson({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="flex items-center justify-between rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10"
+      className="flex items-center justify-between rounded border border-black/10 px-3 py-2 text-sm shadow-sm transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:hover:bg-white/[0.03]"
     >
       <div className="flex items-center gap-2">
         <button
@@ -244,19 +247,23 @@ function SortableLesson({
           {...listeners}
           type="button"
           aria-label={`Drag to reorder lesson: ${lesson.title}`}
-          className="cursor-grab bg-transparent p-0"
+          className="cursor-grab bg-transparent p-0 text-black/40 dark:text-white/40"
         >
-          ⠿
+          <GripVertical className="h-4 w-4" aria-hidden />
         </button>
-        <Link href={`/studio/courses/${courseId}/lessons/${lesson.id}`} className="hover:underline">
+        <Link
+          href={`/studio/courses/${courseId}/lessons/${lesson.id}`}
+          className="text-brand-text hover:underline"
+        >
           {lesson.title}
         </Link>
         <span className="text-xs text-black/40 dark:text-white/40">{lesson.type}</span>
       </div>
       <button
         onClick={() => deleteLesson(courseId, lesson.id).then(refresh)}
-        className="text-red-600 hover:underline"
+        className="flex items-center gap-1 text-red-600 hover:underline"
       >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden />
         Delete
       </button>
     </li>

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { createClient } from "@/lib/supabase/server";
+import { BackLink } from "@/components/BackLink";
 import type { Block, InteractiveBlock, Lesson, LiveSession, Question, QuestionChoice } from "@/lib/types/db";
 import { BlockEditor } from "./BlockEditor";
 import { QuizEditor } from "./QuizEditor";
@@ -84,9 +84,7 @@ export default async function LessonEditorPage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <Link href={`/studio/courses/${courseId}`} className="text-sm hover:underline">
-        ← Back to outline
-      </Link>
+      <BackLink href={`/studio/courses/${courseId}`}>Back to outline</BackLink>
       <h1 className="text-2xl font-semibold">{typedLesson.title}</h1>
 
       {typedLesson.type === "BLOCK" ? (

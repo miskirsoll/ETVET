@@ -19,6 +19,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
+import { GripVertical, Layers, Lock, Trash2 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import type { Block, BlockType, InteractiveBlock, LiveSession, SubscriptionTier } from "@/lib/types/db";
 import {
   createBlock,
@@ -129,9 +131,7 @@ export function BlockEditor({
       </DndContext>
 
       {blocks.length === 0 && (
-        <p className="text-sm text-black/50 dark:text-white/50">
-          No blocks yet — add one below.
-        </p>
+        <EmptyState icon={Layers} title="No blocks yet — add one below." />
       )}
 
       <div className="flex flex-wrap gap-2 border-t border-black/10 pt-4 dark:border-white/10">
@@ -140,10 +140,11 @@ export function BlockEditor({
             <Link
               key={type}
               href="/upgrade?required=MAXPRO"
-              className="rounded border border-black/15 px-3 py-1.5 text-sm text-black/40 dark:border-white/20 dark:text-white/40"
+              className="flex items-center gap-1.5 rounded border border-black/15 px-3 py-1.5 text-sm text-black/40 dark:border-white/20 dark:text-white/40"
               title="Interactive blocks require MAXPRO"
             >
-              🔒 {label}
+              <Lock className="h-3.5 w-3.5" aria-hidden />
+              {label}
             </Link>
           ) : (
             <button
@@ -185,7 +186,7 @@ function SortableBlock({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="rounded border border-black/10 p-4 dark:border-white/10"
+      className="rounded border border-black/10 p-4 shadow-sm dark:border-white/10"
     >
       <div className="mb-2 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
         <button
@@ -193,11 +194,13 @@ function SortableBlock({
           {...listeners}
           type="button"
           aria-label={`Drag to reorder block: ${block.type}`}
-          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+          className="flex cursor-grab items-center gap-1.5 bg-transparent p-0 uppercase tracking-wide"
         >
-          ⠿ {block.type}
+          <GripVertical className="h-4 w-4" aria-hidden />
+          {block.type}
         </button>
-        <button onClick={onDelete} className="text-red-600 hover:underline">
+        <button onClick={onDelete} className="flex items-center gap-1 text-red-600 hover:underline">
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
           Delete
         </button>
       </div>

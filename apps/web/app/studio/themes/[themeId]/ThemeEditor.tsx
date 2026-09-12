@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, Check, Save } from "lucide-react";
 import { FONT_CHOICES, type Theme } from "@/lib/types/db";
 import { updateTheme } from "../actions";
 import { FileUpload } from "@/components/FileUpload";
@@ -45,7 +46,7 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
         />
       </label>
 
-      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">
+      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
         <legend className="px-1 text-sm font-medium">Colors</legend>
         {(["primary", "background", "text"] as const).map((key) => (
           <label key={key} className="flex items-center justify-between text-sm capitalize">
@@ -72,7 +73,7 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">
+      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
         <legend className="px-1 text-sm font-medium">Fonts</legend>
         {(["heading", "body"] as const).map((key) => (
           <label key={key} className="flex items-center justify-between gap-2 text-sm capitalize">
@@ -92,7 +93,7 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
         ))}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">
+      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
         <legend className="px-1 text-sm font-medium">Branding</legend>
         <label className="flex flex-col gap-1 text-sm">
           Logo URL
@@ -110,7 +111,7 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
         )}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">
+      <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 shadow-sm dark:border-white/10">
         <legend className="px-1 text-sm font-medium">Layout</legend>
         <label className="flex items-center justify-between text-sm">
           Content width
@@ -135,8 +136,9 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
 
       <button
         onClick={save}
-        className="self-start rounded bg-foreground px-5 py-2.5 text-sm text-background"
+        className="flex items-center gap-1.5 self-start rounded bg-brand px-5 py-2.5 text-sm text-brand-foreground"
       >
+        {saved ? <Check className="h-4 w-4" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
         {saved ? "Saved" : "Save theme"}
       </button>
     </div>
@@ -162,9 +164,14 @@ function ContrastCheck({
   return (
     <p
       role={passes ? undefined : "alert"}
-      className={passes ? "text-black/50 dark:text-white/50" : "font-medium text-red-600"}
+      className={`flex items-center gap-1.5 ${passes ? "text-black/50 dark:text-white/50" : "font-medium text-red-600"}`}
     >
-      {passes ? "✓" : "⚠"} {label}: {ratio.toFixed(1)}:1 (WCAG AA needs {required}:1
+      {passes ? (
+        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      ) : (
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      )}
+      {label}: {ratio.toFixed(1)}:1 (WCAG AA needs {required}:1
       {passes ? ", passes" : " — too low"})
     </p>
   );

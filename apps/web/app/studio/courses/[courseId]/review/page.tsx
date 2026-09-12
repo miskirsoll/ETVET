@@ -1,7 +1,9 @@
+import { BookOpen } from "lucide-react";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { getCourseOutline } from "@/app/c/[slug]/data";
 import { getCourseComments } from "@/lib/comments/data";
+import { EmptyState } from "@/components/EmptyState";
 import { CommentsPanel } from "../CommentsPanel";
 
 /** Read-only preview + feedback for the REVIEWER role (§7.12) -- no
@@ -41,9 +43,7 @@ export default async function CourseReviewPage({
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-medium">Outline</h2>
-        {orderedSections.length === 0 && (
-          <p className="text-sm text-black/50 dark:text-white/50">No lessons yet.</p>
-        )}
+        {orderedSections.length === 0 && <EmptyState icon={BookOpen} title="No lessons yet." />}
         {orderedSections.map((section) => (
           <div key={section.id} className="flex flex-col gap-1">
             <h3 className="text-sm font-medium text-black/70 dark:text-white/70">

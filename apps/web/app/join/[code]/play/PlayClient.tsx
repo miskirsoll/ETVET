@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { LiveSession, LiveSessionStatus, LiveSlide, QaQuestion } from "@/lib/types/db";
 import {
@@ -408,9 +409,10 @@ function QaPanel({ sessionId }: { sessionId: string }) {
                 setUpvoted((prev) => new Set(prev).add(q.id));
                 await upvoteQuestion(q.id, sessionId);
               }}
-              className="shrink-0 rounded border border-black/15 px-2 py-1 text-xs disabled:opacity-40 dark:border-white/20"
+              className="flex shrink-0 items-center gap-0.5 rounded border border-black/15 px-2 py-1 text-xs disabled:opacity-40 dark:border-white/20"
             >
-              ▲ {q.upvotes}
+              <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+              {q.upvotes}
             </button>
           </li>
         ))}

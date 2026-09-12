@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Logo } from "@/components/Logo";
 import { SignupForm } from "./SignupForm";
 
 interface InviteSummary {
@@ -25,6 +26,7 @@ export default async function SignupPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6">
+      <Logo label="ETVET" />
       <div>
         <h1 className="text-2xl font-semibold">
           {validInvite ? `Join ${validInvite.org_name}` : "Create your ETVET organization"}

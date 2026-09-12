@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { Spinner } from "@/components/Spinner";
 import { signUp } from "../login/actions";
 
 type ActionState = { error?: string } | undefined;
@@ -57,8 +58,9 @@ export function SignupForm({ inviteToken }: { inviteToken?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
+        className="flex items-center justify-center gap-1.5 rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Creating account…" : inviteToken ? "Join team" : "Create organization"}
       </button>
       <p className="text-sm text-black/60 dark:text-white/60">

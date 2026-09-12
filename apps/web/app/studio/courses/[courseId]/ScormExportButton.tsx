@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Download } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 
 export function ScormExportButton({ courseId }: { courseId: string }) {
   const [pending, setPending] = useState(false);
@@ -54,37 +56,47 @@ export function ScormExportButton({ courseId }: { courseId: string }) {
         <button
           onClick={handleClick}
           disabled={pending}
-          className="rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded bg-brand px-4 py-2 text-sm text-brand-foreground disabled:opacity-50"
         >
+          {pending ? <Spinner className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5" aria-hidden />}
           {pending ? "Building package…" : "Download SCORM for Moodle"}
         </button>
       </div>
 
       {errors && (
-        <div className="rounded bg-red-100 p-3 text-red-800 dark:bg-red-950 dark:text-red-300">
-          <p className="font-medium">Couldn&apos;t build the package:</p>
-          <ul className="list-disc pl-5">
-            {errors.map((e, i) => (
-              <li key={i}>{e}</li>
-            ))}
-          </ul>
+        <div className="flex gap-2 rounded bg-red-100 p-3 text-red-800 dark:bg-red-950 dark:text-red-300">
+          <AlertCircle className="h-4 w-4 shrink-0 translate-y-0.5" aria-hidden />
+          <div>
+            <p className="font-medium">Couldn&apos;t build the package:</p>
+            <ul className="list-disc pl-5">
+              {errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
       {warnings && (
-        <div className="rounded bg-amber-100 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-          <p className="font-medium">Package built, with a few notes:</p>
-          <ul className="list-disc pl-5">
-            {warnings.map((w, i) => (
-              <li key={i}>{w}</li>
-            ))}
-          </ul>
+        <div className="flex gap-2 rounded bg-amber-100 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0 translate-y-0.5" aria-hidden />
+          <div>
+            <p className="font-medium">Package built, with a few notes:</p>
+            <ul className="list-disc pl-5">
+              {warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
       {downloaded && (
         <div className="rounded border border-black/10 p-3 dark:border-white/10">
-          <p className="mb-2 font-medium">Uploading to Moodle</p>
+          <p className="mb-2 flex items-center gap-1.5 font-medium">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden />
+            Uploading to Moodle
+          </p>
           <ol className="list-decimal space-y-1 pl-5">
             <li>In your Moodle course, turn editing on and choose <strong>Add an activity or resource</strong>.</li>
             <li>Select <strong>SCORM package</strong>.</li>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Spinner } from "@/components/Spinner";
 import { verifyCoursePassword } from "@/app/c/actions";
 
 type ActionState = { error?: string } | undefined;
@@ -28,8 +29,9 @@ export function PasswordForm({ slug }: { slug: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
         >
+          {pending && <Spinner />}
           {pending ? "Checking…" : "Continue"}
         </button>
       </form>

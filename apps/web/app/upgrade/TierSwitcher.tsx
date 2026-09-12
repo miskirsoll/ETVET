@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/Spinner";
 import { setOrgTier } from "./actions";
 import type { SubscriptionTier } from "@/lib/types/db";
 
@@ -18,8 +19,9 @@ export function TierSwitcher({ tier }: { tier: SubscriptionTier }) {
           router.refresh();
         })
       }
-      className="rounded bg-foreground px-3 py-1.5 text-sm text-background disabled:opacity-50"
+      className="flex items-center justify-center gap-1.5 rounded bg-brand px-3 py-1.5 text-sm text-brand-foreground disabled:opacity-50"
     >
+      {pending && <Spinner className="h-3.5 w-3.5" />}
       {pending ? "Switching…" : `Switch to ${tier}`}
     </button>
   );

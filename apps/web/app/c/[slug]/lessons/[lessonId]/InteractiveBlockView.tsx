@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { InteractiveBlockMode, LiveResponse, LiveSession, LiveSlide } from "@/lib/types/db";
 import { pollCounts, wordCloudWeights, textResponses } from "@/lib/live/aggregate";
@@ -93,9 +94,10 @@ export function InteractiveBlockView({
         href={`/join/${session.join_code}`}
         target="_blank"
         rel="noreferrer"
-        className="inline-block rounded bg-foreground px-5 py-2.5 text-sm text-background"
+        className="inline-flex items-center gap-1.5 rounded bg-foreground px-5 py-2.5 text-sm text-background"
       >
-        Join the live session: {session.title} →
+        Join the live session: {session.title}
+        <ArrowRight className="h-4 w-4" aria-hidden />
       </a>
     );
   }

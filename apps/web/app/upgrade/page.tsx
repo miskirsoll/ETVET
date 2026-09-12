@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { requireAuthOrRedirect } from "@/lib/auth/requireTier";
 import { TierBadge } from "@/components/TierBadge";
 import { TierSwitcher } from "./TierSwitcher";
@@ -61,28 +62,38 @@ export default async function UpgradePage({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {TIERS.map(({ tier, blurb, features }) => (
-          <div
-            key={tier}
-            className="flex flex-col gap-3 rounded border border-black/10 p-5 dark:border-white/10"
-          >
-            <div className="flex items-center justify-between">
-              <TierBadge tier={tier} />
-              {session.org.subscription_tier === tier && (
-                <span className="text-xs text-black/40 dark:text-white/40">Current</span>
-              )}
+        {TIERS.map(({ tier, blurb, features }) => {
+          const isCurrent = session.org.subscription_tier === tier;
+          return (
+            <div
+              key={tier}
+              className={`flex flex-col gap-3 rounded border p-5 shadow-sm transition-shadow ${
+                isCurrent
+                  ? "border-brand ring-1 ring-brand"
+                  : "border-black/10 hover:shadow-md dark:border-white/10"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <TierBadge tier={tier} />
+                {isCurrent && (
+                  <span className="rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-medium text-brand-text">
+                    Current
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-black/60 dark:text-white/60">{blurb}</p>
+              <ul className="flex flex-1 flex-col gap-1.5 text-sm">
+                {features.map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-text" aria-hidden />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              {isOrgAdmin && !isCurrent && <TierSwitcher tier={tier} />}
             </div>
-            <p className="text-sm text-black/60 dark:text-white/60">{blurb}</p>
-            <ul className="flex flex-1 flex-col gap-1 text-sm">
-              {features.map((f) => (
-                <li key={f}>• {f}</li>
-              ))}
-            </ul>
-            {isOrgAdmin && session.org.subscription_tier !== tier && (
-              <TierSwitcher tier={tier} />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </main>
   );

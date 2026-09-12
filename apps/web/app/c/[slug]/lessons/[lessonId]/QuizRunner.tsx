@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import type { Lesson, Question, QuestionChoice } from "@/lib/types/db";
 import { submitQuizAction } from "@/app/c/actions";
 
@@ -73,12 +75,17 @@ export function QuizRunner({
     return (
       <div className="flex flex-col gap-4">
         <div
-          className={`rounded p-4 text-sm ${
+          className={`flex items-center gap-2 rounded p-4 text-sm ${
             result.passed
               ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
               : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
           }`}
         >
+          {result.passed ? (
+            <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden />
+          ) : (
+            <XCircle className="h-5 w-5 shrink-0" aria-hidden />
+          )}
           Score: {result.score}% — {result.passed ? "Passed" : "Not passed"} (needs{" "}
           {lesson.pass_threshold}%)
         </div>
@@ -98,10 +105,10 @@ export function QuizRunner({
           {result.passed && nextHref && (
             <Link
               href={nextHref}
-              className="rounded bg-foreground px-4 py-2 text-sm text-background"
+              className="flex items-center gap-1.5 rounded bg-foreground px-4 py-2 text-sm text-background"
               style={accentColor ? { backgroundColor: accentColor } : undefined}
             >
-              Next lesson →
+              Next lesson <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           )}
         </div>
@@ -148,9 +155,10 @@ export function QuizRunner({
       <button
         onClick={submit}
         disabled={submitting}
-        className="self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
+        className="flex items-center gap-1.5 self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
         style={accentColor ? { backgroundColor: accentColor } : undefined}
       >
+        {submitting && <Spinner />}
         {submitting ? "Submitting…" : "Submit"}
       </button>
     </div>

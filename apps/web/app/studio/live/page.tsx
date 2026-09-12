@@ -1,9 +1,20 @@
 import Link from "next/link";
+import { Radio, Trash2 } from "lucide-react";
 import { requireAuthOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import { LockedFeature } from "@/components/LockedFeature";
+import { EmptyState } from "@/components/EmptyState";
 import type { LiveSession } from "@/lib/types/db";
 import { createLiveSession, deleteLiveSession } from "./actions";
+
+function StatusPill({ status }: { status: LiveSession["status"] }) {
+  const styles: Record<LiveSession["status"], string> = {
+    live: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+    draft: "bg-black/10 text-black/60 dark:bg-white/10 dark:text-white/60",
+    ended: "bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40",
+  };
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>{status}</span>;
+}
 
 export default async function LiveSessionsPage() {
   const session = await requireAuthOrRedirect();
@@ -13,6 +24,7 @@ export default async function LiveSessionsPage() {
     .select("*")
     .eq("org_id", session.org.id)
     .order("created_at", { ascending: false });
+  const list = (sessions ?? []) as LiveSession[];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -31,34 +43,38 @@ export default async function LiveSessionsPage() {
               required
               className="flex-1 rounded border border-black/10 px-3 py-2 dark:border-white/20"
             />
-            <button type="submit" className="rounded bg-foreground px-4 py-2 text-background">
+            <button type="submit" className="rounded bg-brand px-4 py-2 text-brand-foreground">
               Create session
             </button>
           </form>
 
-          <ul className="flex flex-col gap-3">
-            {(sessions as LiveSession[] | null)?.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center justify-between rounded border border-black/10 px-4 py-3 dark:border-white/10"
-              >
-                <Link href={`/studio/live/${s.id}`} className="flex-1 hover:underline">
-                  <span className="font-medium">{s.title}</span>{" "}
-                  <span className="text-xs text-black/50 dark:text-white/50">{s.status}</span>
-                </Link>
-                <form action={deleteLiveSession.bind(null, s.id)}>
-                  <button type="submit" className="text-sm text-red-600 hover:underline">
-                    Delete
-                  </button>
-                </form>
-              </li>
-            ))}
-            {(!sessions || sessions.length === 0) && (
-              <p className="text-sm text-black/50 dark:text-white/50">
-                No live sessions yet — create one above.
-              </p>
-            )}
-          </ul>
+          {list.length === 0 ? (
+            <EmptyState icon={Radio} title="No live sessions yet — create one above." />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {list.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between rounded border border-black/10 px-4 py-3 shadow-sm transition-shadow hover:shadow-md dark:border-white/10"
+                >
+                  <Link href={`/studio/live/${s.id}`} className="flex flex-1 items-center gap-2">
+                    <span className="font-medium hover:underline">{s.title}</span>
+                    <StatusPill status={s.status} />
+                  </Link>
+                  <form action={deleteLiveSession.bind(null, s.id)}>
+                    <button
+                      type="submit"
+                      aria-label={`Delete ${s.title}`}
+                      className="flex items-center gap-1 text-sm text-red-600 hover:underline"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      Delete
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </LockedFeature>
     </div>

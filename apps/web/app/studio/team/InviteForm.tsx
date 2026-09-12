@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Check, Copy, Link2 } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import type { OrgRole } from "@/lib/types/db";
 import { createInvite } from "./actions";
 
@@ -63,8 +65,9 @@ export function InviteForm() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded bg-brand px-4 py-2 text-sm text-brand-foreground disabled:opacity-50"
         >
+          {pending ? <Spinner className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" aria-hidden />}
           {pending ? "Creating…" : "Create invite link"}
         </button>
       </form>
@@ -78,8 +81,9 @@ export function InviteForm() {
               navigator.clipboard.writeText(link);
               setCopied(true);
             }}
-            className="rounded border border-black/15 px-3 py-1 dark:border-white/20"
+            className="flex items-center gap-1 rounded border border-black/15 px-3 py-1 dark:border-white/20"
           >
+            {copied ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>

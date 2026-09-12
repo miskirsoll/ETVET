@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { LogOut } from "lucide-react";
 import { requireAuthOrRedirect } from "@/lib/auth/requireTier";
 import { signOut } from "@/app/login/actions";
 import { TierBadge } from "@/components/TierBadge";
+import { Logo } from "@/components/Logo";
+import { StudioNav } from "./StudioNav";
 
 export default async function StudioLayout({
   children,
@@ -14,39 +17,23 @@ export default async function StudioLayout({
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-black/10 px-6 py-3 dark:border-white/10">
         <div className="flex items-center gap-6">
-          <Link href="/studio" className="font-semibold">
-            ETVET Studio
+          <Link href="/studio">
+            <Logo />
           </Link>
-          <nav className="flex gap-4 text-sm">
-            <Link href="/studio" className="hover:underline">
-              Courses
-            </Link>
-            <Link href="/studio/themes" className="hover:underline">
-              Themes
-            </Link>
-            <Link href="/studio/live" className="hover:underline">
-              Live Sessions
-            </Link>
-            {session.appUser.role === "ORG_ADMIN" && (
-              <Link href="/studio/team" className="hover:underline">
-                Team
-              </Link>
-            )}
-            {session.appUser.role === "SUPER_ADMIN" && (
-              <Link href="/admin" className="hover:underline">
-                Platform admin
-              </Link>
-            )}
-          </nav>
+          <StudioNav role={session.appUser.role} />
         </div>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-black/60 dark:text-white/60">{session.org.name}</span>
           <TierBadge tier={session.org.subscription_tier} />
-          <Link href="/upgrade" className="hover:underline">
+          <Link href="/upgrade" className="rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5">
             Upgrade
           </Link>
           <form action={signOut}>
-            <button type="submit" className="hover:underline">
+            <button
+              type="submit"
+              className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden />
               Sign out
             </button>
           </form>

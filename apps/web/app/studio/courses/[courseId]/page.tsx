@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BarChart3, Eye } from "lucide-react";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { createClient } from "@/lib/supabase/server";
@@ -67,14 +68,16 @@ export default async function CourseOutlinePage({
         <ScormExportButton courseId={courseId} />
         <Link
           href={`/studio/courses/${courseId}/analytics`}
-          className="inline-block rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
+          className="flex items-center gap-1.5 rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
         >
+          <BarChart3 className="h-3.5 w-3.5" aria-hidden />
           Analytics {session.org.subscription_tier !== "MAXPRO" && "(MAXPRO)"}
         </Link>
         <Link
           href={`/studio/courses/${courseId}/review`}
-          className="inline-block rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
+          className="flex items-center gap-1.5 rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
         >
+          <Eye className="h-3.5 w-3.5" aria-hidden />
           Reviewer preview
         </Link>
       </div>

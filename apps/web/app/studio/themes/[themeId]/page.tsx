@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
+import { BackLink } from "@/components/BackLink";
 import type { Theme } from "@/lib/types/db";
 import { ThemeEditor } from "./ThemeEditor";
 
@@ -18,9 +18,7 @@ export default async function ThemeEditPage({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <Link href="/studio/themes" className="text-sm hover:underline">
-        ← Back to themes
-      </Link>
+      <BackLink href="/studio/themes">Back to themes</BackLink>
       <ThemeEditor theme={theme as Theme} orgId={session.org.id} />
     </div>
   );

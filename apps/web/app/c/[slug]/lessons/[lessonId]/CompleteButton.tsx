@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Check } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import { completeLessonAction } from "@/app/c/actions";
 
 export function CompleteButton({
@@ -34,10 +36,22 @@ export function CompleteButton({
     <button
       onClick={onClick}
       disabled={pending}
-      className="self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
+      className="flex items-center gap-1.5 self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
       style={accentColor ? { backgroundColor: accentColor } : undefined}
     >
-      {pending ? "Saving…" : nextHref ? "Complete & continue →" : "Mark complete"}
+      {pending ? (
+        <>
+          <Spinner /> Saving…
+        </>
+      ) : nextHref ? (
+        <>
+          Complete &amp; continue <ArrowRight className="h-4 w-4" aria-hidden />
+        </>
+      ) : (
+        <>
+          <Check className="h-4 w-4" aria-hidden /> Mark complete
+        </>
+      )}
     </button>
   );
 }

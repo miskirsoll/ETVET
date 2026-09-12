@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { ArrowLeft, ArrowRight, Lock, Unlock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { BackLink } from "@/components/BackLink";
 import type { LiveResponse, LiveSession, LiveSlide, QaQuestion } from "@/lib/types/db";
 import { pollCounts, wordCloudWeights, textResponses, quizLeaderboard } from "@/lib/live/aggregate";
 import { goToSlide, setLocked, setQaStatus } from "../../actions";
@@ -104,9 +105,7 @@ export function PresentClient({ session, slides }: { session: LiveSession; slide
   return (
     <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-6 py-8">
       <div className="flex items-center justify-between text-sm">
-        <Link href={`/studio/live/${session.id}`} className="hover:underline">
-          ← Back to builder
-        </Link>
+        <BackLink href={`/studio/live/${session.id}`}>Back to builder</BackLink>
         <span>
           Slide {currentIndex + 1} of {sorted.length}
         </span>
@@ -124,21 +123,24 @@ export function PresentClient({ session, slides }: { session: LiveSession; slide
         <button
           onClick={() => navigate(-1)}
           disabled={currentIndex <= 0}
-          className="rounded border border-black/15 px-4 py-2 text-sm disabled:opacity-40 dark:border-white/20"
+          className="flex items-center gap-1.5 rounded border border-black/15 px-4 py-2 text-sm disabled:opacity-40 dark:border-white/20"
         >
-          ← Previous
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Previous
         </button>
         <button
           onClick={() => navigate(1)}
           disabled={currentIndex >= sorted.length - 1}
-          className="rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-40"
         >
-          Next →
+          Next
+          <ArrowRight className="h-4 w-4" aria-hidden />
         </button>
         <button
           onClick={toggleLock}
-          className="rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
+          className="flex items-center gap-1.5 rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
         >
+          {locked ? <Unlock className="h-4 w-4" aria-hidden /> : <Lock className="h-4 w-4" aria-hidden />}
           {locked ? "Unlock voting" : "Lock voting"}
         </button>
         <span className="text-sm text-black/50 dark:text-white/50">{responses.length} responses</span>
