@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { Block, Theme } from "@/lib/types/db";
+import type { Block, InteractiveBlock, Theme } from "@/lib/types/db";
+import { InteractiveBlockView } from "./InteractiveBlockView";
 
 /** Splits into runs that end right after (and include) each 'continue' block. */
 function splitIntoSegments(blocks: Block[]): Block[][] {
@@ -18,11 +19,13 @@ export function BlockView({
   slug,
   nextHref,
   theme,
+  interactiveBlocksByBlockId,
 }: {
   blocks: Block[];
   slug: string;
   nextHref: string | null;
   theme?: Theme | null;
+  interactiveBlocksByBlockId?: Record<string, InteractiveBlock>;
 }) {
   const segments = splitIntoSegments([...blocks].sort((a, b) => a.order - b.order));
   const [revealedCount, setRevealedCount] = useState(1);
@@ -36,8 +39,13 @@ export function BlockView({
     <div className="flex flex-col gap-6">
       {visible.map(({ block, segmentIndex }) => (
         <div key={block.id} className={animate ? "etvet-animate-in" : undefined}>
-          {renderBlock(block, slug, nextHref, accentColor, () =>
-            setRevealedCount((c) => Math.max(c, segmentIndex + 2))
+          {renderBlock(
+            block,
+            slug,
+            nextHref,
+            accentColor,
+            interactiveBlocksByBlockId?.[block.id],
+            () => setRevealedCount((c) => Math.max(c, segmentIndex + 2))
           )}
         </div>
       ))}
@@ -50,6 +58,7 @@ function renderBlock(
   slug: string,
   nextHref: string | null,
   accentColor: string | undefined,
+  interactiveBlock: InteractiveBlock | undefined,
   onContinue: () => void
 ) {
   switch (block.type) {
@@ -141,6 +150,13 @@ function renderBlock(
         </a>
       );
     }
+    case "interactive":
+      return (
+        <InteractiveBlockView
+          liveSessionId={interactiveBlock?.live_session_id ?? null}
+          mode={interactiveBlock?.mode ?? "async"}
+        />
+      );
     default:
       return null;
   }

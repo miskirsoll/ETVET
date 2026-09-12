@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
-import type { Block, Lesson, Question, QuestionChoice } from "@/lib/types/db";
+import type { Block, InteractiveBlock, Lesson, LiveSession, Question, QuestionChoice } from "@/lib/types/db";
 import { BlockEditor } from "./BlockEditor";
 import { QuizEditor } from "./QuizEditor";
 
@@ -46,6 +46,28 @@ export default async function LessonEditorPage({
     ? await supabase.from("question_choices").select("*").in("question_id", questionIds).order("order")
     : { data: [] as QuestionChoice[] };
 
+  // For the Interactive block (MAXPRO only): the org's live sessions to
+  // link to, and any existing link for blocks already in this lesson.
+  const { data: liveSessions } =
+    session.org.subscription_tier === "MAXPRO"
+      ? await supabase
+          .from("live_sessions")
+          .select("*")
+          .eq("org_id", session.org.id)
+          .order("created_at", { ascending: false })
+      : { data: [] as LiveSession[] };
+
+  const interactiveBlockIds = (blocks ?? [])
+    .filter((b) => b.type === "interactive")
+    .map((b) => b.id);
+  const { data: interactiveBlocks } = interactiveBlockIds.length
+    ? await supabase.from("interactive_blocks").select("*").in("block_id", interactiveBlockIds)
+    : { data: [] as InteractiveBlock[] };
+  const interactiveBlocksByBlockId: Record<string, InteractiveBlock> = {};
+  for (const ib of (interactiveBlocks ?? []) as InteractiveBlock[]) {
+    interactiveBlocksByBlockId[ib.block_id] = ib;
+  }
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <Link href={`/studio/courses/${courseId}`} className="text-sm hover:underline">
@@ -59,6 +81,9 @@ export default async function LessonEditorPage({
           initialBlocks={(blocks ?? []) as Block[]}
           courseLessons={(courseLessons ?? []).filter((l) => l.id !== lessonId)}
           orgId={session.org.id}
+          tier={session.org.subscription_tier}
+          liveSessions={(liveSessions ?? []) as LiveSession[]}
+          interactiveBlocksByBlockId={interactiveBlocksByBlockId}
         />
       ) : (
         <QuizEditor

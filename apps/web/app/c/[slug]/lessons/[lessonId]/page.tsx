@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLearnerKey } from "@/lib/learner/session";
-import type { Block, Lesson, Question, QuestionChoice } from "@/lib/types/db";
+import type { Block, InteractiveBlock, Lesson, Question, QuestionChoice } from "@/lib/types/db";
 import {
   getPublishedCourseBySlug,
   getCourseOutline,
@@ -62,6 +62,17 @@ export default async function LessonPage({
       .eq("lesson_id", lessonId)
       .order("order");
 
+    const interactiveBlockIds = (blocks ?? [])
+      .filter((b) => b.type === "interactive")
+      .map((b) => b.id);
+    const { data: interactiveBlocks } = interactiveBlockIds.length
+      ? await supabase.from("interactive_blocks").select("*").in("block_id", interactiveBlockIds)
+      : { data: [] as InteractiveBlock[] };
+    const interactiveBlocksByBlockId: Record<string, InteractiveBlock> = {};
+    for (const ib of (interactiveBlocks ?? []) as InteractiveBlock[]) {
+      interactiveBlocksByBlockId[ib.block_id] = ib;
+    }
+
     return (
       <CourseShell
         course={course}
@@ -77,6 +88,7 @@ export default async function LessonPage({
           slug={slug}
           nextHref={nextHref}
           theme={theme}
+          interactiveBlocksByBlockId={interactiveBlocksByBlockId}
         />
         <div className="mt-8">
           <CompleteButton

@@ -252,10 +252,13 @@ const DEFAULT_BLOCK_CONTENT: Record<BlockType, Block["content"]> = {
   divider: {},
   continue: { label: "Continue" },
   button: { label: "Next", target_type: "next" },
+  interactive: {},
 };
 
 export async function createBlock(lessonId: string, type: BlockType): Promise<Block | null> {
-  await requireTier("PRO");
+  // Interactive blocks are the one MAXPRO-only block type -- everything
+  // else (including team-authored courses on PRO) only needs PRO.
+  await requireTier(type === "interactive" ? "MAXPRO" : "PRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("blocks")
@@ -272,6 +275,11 @@ export async function createBlock(lessonId: string, type: BlockType): Promise<Bl
     })
     .select("*")
     .single();
+  if (!data) return null;
+
+  if (type === "interactive") {
+    await supabase.from("interactive_blocks").insert({ block_id: data.id, mode: "async" });
+  }
   return data as Block | null;
 }
 
@@ -293,4 +301,15 @@ export async function reorderBlocks(orderedIds: string[]) {
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("blocks").update({ order: index }).eq("id", id))
   );
+}
+
+// ---------- The Bridge: Interactive blocks (MAXPRO) ----------
+
+export async function setInteractiveBlockConfig(
+  blockId: string,
+  fields: { live_session_id: string | null; mode: "sync" | "async" }
+) {
+  await requireTier("MAXPRO");
+  const supabase = await createClient();
+  await supabase.from("interactive_blocks").update(fields).eq("block_id", blockId);
 }

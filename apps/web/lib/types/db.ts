@@ -147,7 +147,8 @@ export type BlockType =
   | "audio"
   | "divider"
   | "continue"
-  | "button";
+  | "button"
+  | "interactive";
 
 export interface Block {
   id: string;
@@ -249,4 +250,15 @@ export interface QaQuestion {
   upvotes: number;
   status: QaQuestionStatus;
   created_at: string;
+}
+
+// ---------- Module C: The Bridge (MAXPRO) ----------
+
+export type InteractiveBlockMode = "sync" | "async";
+
+export interface InteractiveBlock {
+  id: string;
+  block_id: string;
+  live_session_id: string | null;
+  mode: InteractiveBlockMode;
 }

@@ -5,6 +5,20 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateLearnerKey } from "@/lib/learner/session";
 import type { LearnerProgress, Question, QuestionChoice } from "@/lib/types/db";
 
+/**
+ * The Bridge's async mode reuses live_responses (Module B's schema)
+ * rather than inventing a parallel response table -- but a course
+ * learner's identity comes from lib/learner/session.ts (anon token or an
+ * authenticated user id), not a live-session participant_token. Encoding
+ * "user:<id>" for authenticated learners lets one text column serve both
+ * identity systems without a schema change; anonymous learners just use
+ * their existing anon token directly.
+ */
+async function bridgeParticipantToken(): Promise<string> {
+  const key = await getOrCreateLearnerKey();
+  return key.userId ? `user:${key.userId}` : (key.anonToken as string);
+}
+
 export async function verifyCoursePassword(slug: string, formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const supabase = await createClient();
@@ -123,4 +137,19 @@ export async function submitQuizAction(
   });
 
   return { score, passed };
+}
+
+// ---------- The Bridge: async interactive-block responses ----------
+
+export async function submitBridgeResponse(
+  liveSlideId: string,
+  response: Record<string, unknown>
+) {
+  const token = await bridgeParticipantToken();
+  const supabase = await createClient();
+  await supabase.from("live_responses").insert({
+    live_slide_id: liveSlideId,
+    participant_token: token,
+    response,
+  });
 }

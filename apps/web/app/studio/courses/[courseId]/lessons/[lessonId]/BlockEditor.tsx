@@ -16,8 +16,15 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Block, BlockType } from "@/lib/types/db";
-import { createBlock, deleteBlock, reorderBlocks, updateBlockContent } from "@/app/studio/actions";
+import Link from "next/link";
+import type { Block, BlockType, InteractiveBlock, LiveSession, SubscriptionTier } from "@/lib/types/db";
+import {
+  createBlock,
+  deleteBlock,
+  reorderBlocks,
+  updateBlockContent,
+  setInteractiveBlockConfig,
+} from "@/app/studio/actions";
 import { FileUpload } from "@/components/FileUpload";
 
 const BLOCK_TYPES: { type: BlockType; label: string }[] = [
@@ -32,6 +39,7 @@ const BLOCK_TYPES: { type: BlockType; label: string }[] = [
   { type: "divider", label: "Divider" },
   { type: "continue", label: "Continue" },
   { type: "button", label: "Button" },
+  { type: "interactive", label: "Interactive" },
 ];
 
 export interface CourseLessonRef {
@@ -44,15 +52,22 @@ export function BlockEditor({
   initialBlocks,
   courseLessons,
   orgId,
+  tier,
+  liveSessions,
+  interactiveBlocksByBlockId,
 }: {
   lessonId: string;
   initialBlocks: Block[];
   courseLessons: CourseLessonRef[];
   orgId: string;
+  tier: SubscriptionTier;
+  liveSessions: LiveSession[];
+  interactiveBlocksByBlockId: Record<string, InteractiveBlock>;
 }) {
   const [blocks, setBlocks] = useState(
     [...initialBlocks].sort((a, b) => a.order - b.order)
   );
+  const [interactiveBlocks, setInteractiveBlocks] = useState(interactiveBlocksByBlockId);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   function onDragEnd(event: DragEndEvent) {
@@ -67,7 +82,14 @@ export function BlockEditor({
 
   async function addBlock(type: BlockType) {
     const block = await createBlock(lessonId, type);
-    if (block) setBlocks((prev) => [...prev, block]);
+    if (!block) return;
+    setBlocks((prev) => [...prev, block]);
+    if (type === "interactive") {
+      setInteractiveBlocks((prev) => ({
+        ...prev,
+        [block.id]: { id: "", block_id: block.id, live_session_id: null, mode: "async" },
+      }));
+    }
   }
 
   function updateBlock(id: string, content: Block["content"]) {
@@ -91,6 +113,8 @@ export function BlockEditor({
                 block={block}
                 courseLessons={courseLessons}
                 orgId={orgId}
+                liveSessions={liveSessions}
+                interactiveBlock={interactiveBlocks[block.id]}
                 onChange={(content) => updateBlock(block.id, content)}
                 onDelete={() => removeBlock(block.id)}
               />
@@ -106,15 +130,26 @@ export function BlockEditor({
       )}
 
       <div className="flex flex-wrap gap-2 border-t border-black/10 pt-4 dark:border-white/10">
-        {BLOCK_TYPES.map(({ type, label }) => (
-          <button
-            key={type}
-            onClick={() => addBlock(type)}
-            className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
-          >
-            + {label}
-          </button>
-        ))}
+        {BLOCK_TYPES.map(({ type, label }) =>
+          type === "interactive" && tier !== "MAXPRO" ? (
+            <Link
+              key={type}
+              href="/upgrade?required=MAXPRO"
+              className="rounded border border-black/15 px-3 py-1.5 text-sm text-black/40 dark:border-white/20 dark:text-white/40"
+              title="Interactive blocks require MAXPRO"
+            >
+              🔒 {label}
+            </Link>
+          ) : (
+            <button
+              key={type}
+              onClick={() => addBlock(type)}
+              className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
+            >
+              + {label}
+            </button>
+          )
+        )}
       </div>
     </div>
   );
@@ -124,12 +159,16 @@ function SortableBlock({
   block,
   courseLessons,
   orgId,
+  liveSessions,
+  interactiveBlock,
   onChange,
   onDelete,
 }: {
   block: Block;
   courseLessons: CourseLessonRef[];
   orgId: string;
+  liveSessions: LiveSession[];
+  interactiveBlock: InteractiveBlock | undefined;
   onChange: (content: Block["content"]) => void;
   onDelete: () => void;
 }) {
@@ -151,8 +190,77 @@ function SortableBlock({
           Delete
         </button>
       </div>
-      <BlockFields block={block} courseLessons={courseLessons} orgId={orgId} onChange={onChange} />
+      {block.type === "interactive" ? (
+        <InteractiveBlockFields
+          blockId={block.id}
+          liveSessions={liveSessions}
+          interactiveBlock={interactiveBlock}
+        />
+      ) : (
+        <BlockFields block={block} courseLessons={courseLessons} orgId={orgId} onChange={onChange} />
+      )}
     </li>
+  );
+}
+
+function InteractiveBlockFields({
+  blockId,
+  liveSessions,
+  interactiveBlock,
+}: {
+  blockId: string;
+  liveSessions: LiveSession[];
+  interactiveBlock: InteractiveBlock | undefined;
+}) {
+  const [liveSessionId, setLiveSessionId] = useState(interactiveBlock?.live_session_id ?? "");
+  const [mode, setMode] = useState<"sync" | "async">(interactiveBlock?.mode ?? "async");
+
+  function save(next: { live_session_id: string | null; mode: "sync" | "async" }) {
+    setInteractiveBlockConfig(blockId, next);
+  }
+
+  const inputClass = "w-full rounded border border-black/10 px-3 py-2 text-sm dark:border-white/20 bg-transparent";
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-black/50 dark:text-white/50">
+        Links this block to a Live Session. <strong>Sync</strong>: acts as a join point into a
+        live, presenter-run session. <strong>Async</strong>: shows the session&apos;s first slide
+        directly on the page, self-paced, with a running aggregate — no presenter needed.
+      </p>
+      <select
+        className={inputClass}
+        value={liveSessionId}
+        onChange={(e) => {
+          setLiveSessionId(e.target.value);
+          save({ live_session_id: e.target.value || null, mode });
+        }}
+      >
+        <option value="">Choose a live session…</option>
+        {liveSessions.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.title} ({s.status})
+          </option>
+        ))}
+      </select>
+      <select
+        className={inputClass}
+        value={mode}
+        onChange={(e) => {
+          const nextMode = e.target.value as "sync" | "async";
+          setMode(nextMode);
+          save({ live_session_id: liveSessionId || null, mode: nextMode });
+        }}
+      >
+        <option value="async">Async (self-paced, always open)</option>
+        <option value="sync">Sync (join point into a live session)</option>
+      </select>
+      {liveSessions.length === 0 && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          No live sessions yet — create one under Live Sessions first.
+        </p>
+      )}
+    </div>
   );
 }
 

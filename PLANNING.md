@@ -508,19 +508,66 @@ slice; a few things explicitly deferred to §7.7/later.
 - Not built: post-session results page + CSV export, and session-library
   duplicate/reuse-as-template.
 
-### 7.8 The Bridge — Module C (build order step 8) — M
+### 7.8 The Bridge — Module C (build order step 8) — M — **core built**
 
-- Add the "Interactive Block" type to the Block Lesson editor (the
-  `interactive_blocks` table already exists, bridging a `block_id` to a
-  `live_session_id` + `sync`/`async` mode — schema was scaffolded early
-  deliberately for this).
-- Sync mode: block becomes a join point into a live, presenter-controlled
-  session in progress.
-- Async mode: block renders the poll/quiz/word-cloud directly inside the
-  §7.4 course renderer, self-paced, showing a running aggregate with no
-  presenter needed.
-- Both gated `requireTier("MAXPRO")`, following the same
-  `<LockedFeature>` pattern already used for `/studio/live`.
+- ~~Add the "Interactive Block" type to the Block Lesson editor~~ Built —
+  `BlockEditor.tsx` has a new "Interactive" block type; adding one non-MAXPRO
+  shows a locked button linking to `/upgrade?required=MAXPRO` instead of
+  `createBlock()` (which itself also `requireTier("MAXPRO")`-gates the
+  `interactive` type server-side, not just client-side). Picking a block
+  links it to one of the org's `live_sessions` and a `sync`/`async` mode via
+  `setInteractiveBlockConfig()`, stored in `interactive_blocks`
+  (`0010_bridge.sql` added the FK to `live_sessions` and a public-read
+  policy — the table itself was scaffolded back in `0001_init.sql` but had
+  no way to read it publicly, same gap pattern as themes in §7.2).
+- ~~Sync mode~~ Built, but minimally: the public renderer
+  (`InteractiveBlockView.tsx`) shows a "Join the live session →" link to
+  `/join/[code]` when the linked session is `live`, or a "check back later"
+  message otherwise. It is a join point, not an embedded live view — the
+  actual slide/results still only render on the `/join/[code]` and
+  `/studio/live/.../present` pages built in §7.6/§7.7.
+- ~~Async mode~~ Built for `poll`, `word_cloud`, and `open_ended` slide
+  types: the block fetches the linked session's first slide and renders a
+  self-paced mini version inline (vote / type a response), then re-fetches
+  and shows the aggregate (bar chart for polls, tag list for word
+  cloud/open-ended) via the same `lib/live/aggregate.ts` helpers §7.6 uses.
+  `quiz` and `qa_board` slides are **not** supported in async embeds yet —
+  falls back to "This slide type isn't supported in async course embeds
+  yet." Only the session's first slide (`order` ascending) is used; there
+  is no way to embed a specific slide out of a multi-slide session.
+- Async mode reuses `live_sessions`/`live_slides`/`live_responses`
+  as-is rather than a parallel schema — which means an async embed only
+  accepts responses while its linked session is `status = 'live'` and
+  `locked = false` (the exact same RLS as a live-hosted session, see
+  §7.6). There is no distinct "always open" state: an author starts the
+  session once and leaves it live to back the embed; ending or locking it
+  also stops the embed silently (renders the "not available right now"
+  fallback). This is a real limitation worth a follow-up (e.g. a `perpetual`
+  flag) but wasn't in scope for this pass.
+- A course learner's identity for a Bridge submission comes from
+  `lib/learner/session.ts` (course anon-token/user, §7.4's identity
+  system), not `lib/live/participant.ts` (the live-session join identity,
+  §7.6) — encoded as `user:<id>` for authenticated learners or the bare
+  anon token, so one `participant_token` text column serves both identity
+  systems without a schema change.
+- Both authoring (`setInteractiveBlockConfig`) and the block type itself
+  (`createBlock` with `type: "interactive"`) are `requireTier("MAXPRO")`-gated
+  server-side, following the same pattern as `/studio/live`.
+- **Verified**: `npm run lint` and `npm run build` clean with the Bridge
+  changes in place; a dev-server smoke test confirmed no regressions in
+  studio/public-course routing. Full RLS/flow test against a real local
+  Postgres (migrations 0001–0010 applied in order) confirmed: an anon
+  learner can read `interactive_blocks` and the linked `live_sessions`/
+  `live_slides` rows while the session is `live`, can submit a
+  `live_responses` row and read the aggregate back, that a second
+  independent anon participant can also submit (no accidental
+  single-response-per-slide constraint), and that flipping the session out
+  of `live` makes it unreadable to anon again — exactly the state
+  `InteractiveBlockView`'s gating logic depends on. Supabase Realtime
+  itself (live WebSocket delivery) remains unverified for the same reason
+  as §7.6/§7.7 — no Docker/live Supabase project in this sandbox — but the
+  Bridge doesn't depend on Realtime anyway (async mode is submit-and-refetch,
+  not subscribed).
 
 ### 7.9 Unified analytics dashboard (build order step 9) — M
 
