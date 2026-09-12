@@ -367,27 +367,80 @@ Divider was built in the original Block Lesson editor pass.~~ Fixed:
   which is what the spec's "custom navigation/branching" line asked for,
   short of a full scenario/branching editor (still out of scope).
 
-### 7.5 SCORM export for Moodle (build order step 5) — XL
+### 7.5 SCORM export for Moodle (build order step 5) — XL — **done** (core)
 
-- The Node worker service from the architecture decision (§2.1,
-  `apps/scorm-worker` or similar) doesn't exist yet — this is the one
-  piece that doesn't fit cleanly as a Next.js route (real filesystem/zip
-  work, needs to run outside the request/response cycle).
-- Package the §7.4 renderer's output as static HTML/CSS/JS/assets,
-  self-contained, no calls back to ETVET's servers for content to render.
-- `imsmanifest.xml` (SCORM 1.2, single-SCO default) + the
-  `LMSInitialize/GetValue/SetValue/Commit/Finish/GetLastError` JS runtime
-  adapter.
-- Map to `cmi.core.lesson_status`, `cmi.core.score.raw`,
-  `cmi.core.session_time`; resume via compact `cmi.suspend_data`
-  (lesson/block index + answered-question IDs, not full state, to fit
-  under the strict 4096-char limit).
-- Server-side manifest/package validation gate before the download is
-  served, with a clear error instead of a broken zip on failure.
-- Post-download in-app checklist for uploading into Moodle.
-- A generic SCORM 2004/xAPI/AICC/cmi5 export for other LMSs is explicitly
-  lower priority (build order step 11) — get Moodle's SCORM 1.2 path right
-  first.
+Unlike Storage (§7.3), this turned out to be fully testable here: it's
+pure data transformation and zip assembly, no live backend required. Built
+and verified more rigorously than almost anything else in this repo —
+details below.
+
+- ~~Package course content as static HTML/CSS/JS, self-contained.~~ Built
+  as a small vanilla-JS runtime (`lib/scorm/player.ts` generates
+  `index.html`/`styles.css`/`player.js`) — no React/Next runtime bundled,
+  deliberately reimplemented rather than reusing the §7.4 renderer's React
+  components, since a SCORM package has to run standalone with no server.
+  Renders all 10 block types and both quiz question modes
+  (multiple_choice/multiple_response), including Continue-block gating.
+- ~~`imsmanifest.xml` + the SCORM 1.2 JS runtime adapter.~~ Built
+  (`lib/scorm/manifest.ts`, `lib/scorm/scormApiAdapter.ts`) — single-SCO,
+  the standard `findAPI` window-tree-walk, and a harmless in-memory
+  fallback when no LMS API is present (so the same package also just runs
+  standalone in a browser).
+- ~~Map to `cmi.core.lesson_status`/`score.raw`/`session_time`; resume via
+  compact `cmi.suspend_data`.~~ Built. Format documented in
+  `lib/scorm/suspendData.ts`: `v1:<lessonIndex>:<statusChars>:<quizScores>`
+  — compact enough to stay far under the 4096-char limit even for large
+  courses. Deliberately **does not** track in-progress answers within a
+  quiz attempt (the spec's fuller "answered-question IDs" resume
+  fidelity) — a learner who leaves mid-quiz restarts that lesson's quiz.
+  `cmi.core.exit` is set to `"suspend"` for both `incomplete` *and*
+  `failed` overall status (not just `incomplete`) — a failed quiz still
+  has a Retry button, so the session isn't actually finished; found via
+  testing, not assumed.
+- ~~Server-side validation gate before download.~~ Built
+  (`lib/scorm/validate.ts`, via `fast-xml-parser`): confirms well-formed
+  XML, the required SCORM 1.2 elements, `scormtype="sco"`, and that every
+  file the manifest references actually exists in the package — the route
+  handler returns a 422 with specific errors instead of a broken zip.
+- ~~Post-download Moodle checklist.~~ Built into `ScormExportButton`.
+- **Best-effort asset embedding** (`lib/scorm/assets.ts`), not originally
+  scoped this precisely but necessary for genuine self-containment: a
+  direct file URL (uploaded image/audio/video) is fetched and embedded in
+  the zip; a third-party embed URL (YouTube, etc.) has no downloadable
+  file at all, so it's left as an external link with a recorded warning
+  rather than silently claimed as bundled. Verified with a real network
+  fetch (not a mock) — a real image fetched and embedded correctly, a
+  YouTube URL correctly left alone with the right warning, and a
+  nonexistent domain failing without crashing the export.
+- Runs inline in a Next.js Route Handler
+  (`/studio/courses/[courseId]/scorm`) rather than the separate Node
+  worker service the architecture decision called for — reasonable for
+  course sizes in scope so far; extracting it into a standalone worker
+  later shouldn't require changing `lib/scorm/*` itself, since the route
+  handler is a thin wrapper around `buildScormPackage()`.
+- Not built: multi-SCO packaging (single-SCO is the spec's stated
+  default), retry limits (a failed quiz can always be retried), a stock
+  in-package search, and running the actual output through the real ADL
+  SCORM Test Suite (the spec's stronger acceptance criterion, beyond what
+  this repo's own validator checks) — that needs the real tool, not
+  something reproducible here.
+
+**How this was verified** (materially more than a "looks right" read):
+generated the manifest, ran it through the real validator, and confirmed
+both that valid input passes and that two deliberately-broken variants
+(wrong `scormtype`, a missing referenced file) are correctly rejected;
+built a real zip with JSZip and re-opened it to confirm every expected
+file round-trips byte-for-byte; executed the *actual generated JS*
+(`suspend-data.js`, `scorm-api.js`, `player.js`) via Node's `vm` module
+against a hand-built fake DOM and a fake LMS `API` object (not a
+reimplementation of the logic) — clicking through a Continue block,
+completing a lesson, submitting a correct quiz answer (score 100,
+`lesson_status="passed"`, `exit=""`) and an incorrect one (score 0,
+`lesson_status="failed"`, `exit="suspend"`), reading every value back out
+of the fake LMS's own `LMSSetValue` calls rather than reaching into the
+script's internal state. This process caught and fixed one real bug (the
+`cmi.core.exit` logic above) before it shipped, and the asset-embedding
+path was checked against real network requests, not a mock.
 
 ### 7.6 Live Interactive Sessions — Module B (build order step 6) — XL
 

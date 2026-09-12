@@ -6,6 +6,7 @@ import { OutlineEditor } from "./OutlineEditor";
 import { PublishPanel } from "./PublishPanel";
 import { ThemeSelector } from "./ThemeSelector";
 import { CourseCoverField } from "./CourseCoverField";
+import { ScormExportButton } from "./ScormExportButton";
 
 export default async function CourseOutlinePage({
   params,
@@ -54,6 +55,7 @@ export default async function CourseOutlinePage({
         themes={(themes ?? []) as Theme[]}
       />
       <PublishPanel course={course as Course} />
+      <ScormExportButton courseId={courseId} />
       <OutlineEditor
         courseId={courseId}
         initialSections={(sections ?? []) as Section[]}
