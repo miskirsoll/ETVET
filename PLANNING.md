@@ -648,7 +648,7 @@ slice; a few things explicitly deferred to §7.7/later.
 - Needs a live Stripe account/API keys — same "don't fake it" reasoning
   as AI.
 
-### 7.12 Roles/RBAC completeness — S/M — **team invites + reviewer role built**
+### 7.12 Roles/RBAC completeness — S/M — **done**
 
 - ~~Team invite flow~~ Built: `/studio/team` (ORG_ADMIN only, linked from
   the studio nav for admins) lists org members and lets an admin generate
@@ -715,9 +715,28 @@ slice; a few things explicitly deferred to §7.7/later.
   invite-aware `/signup` routes compile and respond correctly (redirects
   for unauthenticated studio pages, 200s for the public signup page even
   with a garbage invite token) with no server errors.
+- ~~Super Admin console~~ Built, minimally: `/admin` (linked from the
+  studio nav only for `SUPER_ADMIN`) lists every organization platform-wide
+  with member/course counts and a tier-override control, backed by two
+  `SECURITY DEFINER` RPCs (`admin_list_organizations`,
+  `admin_set_org_tier`, migration `0014_super_admin.sql`) since
+  `organizations`' only RLS policy is "read your own org" — a plain
+  client query can never return a cross-org list no matter what the app
+  layer checks, same reasoning as `get_learner_progress()` back in §7.4.
+  There is deliberately no self-service path to become `SUPER_ADMIN` —
+  unlike `ORG_ADMIN` (automatic on sign-up) or `AUTHOR`/`TRAINER`/
+  `REVIEWER` (via team invites, §7.12 above), an operator promotes
+  themselves directly in the database (documented in `LOCAL_DEV.md`),
+  matching the "manual tool until the real thing exists" posture
+  `/upgrade`'s tier switcher already has ahead of real Stripe billing.
+  **Verified** against a real local Postgres: an `ORG_ADMIN` (not
+  `SUPER_ADMIN`) gets a clear "requires SUPER_ADMIN" error from both
+  RPCs even though they can read their own org fine through the normal
+  path; a `SUPER_ADMIN` sees every org (not just their own) with correct
+  per-org member/course counts, and a tier override actually persists
+  against a target org they aren't even a member of.
 - Not built: per-lesson/per-block comment threads (course-level only, for
-  now); Super Admin console — cross-org platform management, still
-  lowest priority, internal/operator surface, not customer-facing.
+  now).
 
 ### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit — **first pass done**
 

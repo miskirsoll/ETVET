@@ -107,6 +107,23 @@ Open http://localhost:3000.
    from the first account's `/studio` — that's the multi-tenant RLS
    isolation working.
 
+## Platform admin (SUPER_ADMIN)
+
+`/admin` (cross-org organization list, tier overrides) is gated to the
+`SUPER_ADMIN` role, which no sign-up or invite flow ever grants -- it's an
+internal/operator surface, not something a customer can become. To make
+your own account a super admin locally:
+
+```sql
+update users set role = 'SUPER_ADMIN' where id = (
+  select id from auth.users where email = 'you@example.com'
+);
+```
+
+Run that against your local Supabase Postgres (`supabase db` connection
+details from `supabase status`, or the Studio SQL editor). A "Platform
+admin" link then appears in the studio nav for that account.
+
 ## Automated tests
 
 Three separate test suites, from `apps/web`:
