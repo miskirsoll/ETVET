@@ -171,3 +171,82 @@ export interface LearnerProgress {
   time_spent_seconds: number;
   updated_at: string;
 }
+
+// ---------- Module B: Live Interactive Sessions (MAXPRO) ----------
+
+export type LiveSessionStatus = "draft" | "live" | "ended";
+
+// scale/ranking/100-point-allocation/reactions are deferred -- see
+// PLANNING.md. Same config-jsonb pattern, no editor/player UI yet.
+export type LiveSlideType = "poll" | "word_cloud" | "open_ended" | "quiz" | "qa_board";
+
+export interface LiveSession {
+  id: string;
+  org_id: string;
+  owner_id: string;
+  title: string;
+  join_code: string;
+  status: LiveSessionStatus;
+  current_slide_id: string | null;
+  locked: boolean;
+  created_at: string;
+}
+
+export interface PollConfig {
+  prompt: string;
+  options: string[];
+  multiple_response?: boolean;
+}
+
+export interface WordCloudConfig {
+  prompt: string;
+}
+
+export interface OpenEndedConfig {
+  prompt: string;
+}
+
+export interface QuizSlideConfig {
+  prompt: string;
+  options: string[];
+  correct_index: number;
+  time_limit_seconds: number;
+}
+
+export interface QaBoardConfig {
+  prompt: string;
+}
+
+export type LiveSlideConfig = PollConfig | WordCloudConfig | OpenEndedConfig | QuizSlideConfig | QaBoardConfig;
+
+export interface LiveSlide {
+  id: string;
+  session_id: string;
+  type: LiveSlideType;
+  order: number;
+  config: Record<string, unknown>;
+}
+
+export interface LiveResponse {
+  id: string;
+  live_slide_id: string;
+  participant_token: string;
+  display_name: string | null;
+  response: Record<string, unknown>;
+  is_correct: boolean | null;
+  response_time_ms: number | null;
+  submitted_at: string;
+}
+
+export type QaQuestionStatus = "pending" | "approved" | "hidden" | "answered";
+
+export interface QaQuestion {
+  id: string;
+  session_id: string;
+  participant_token: string;
+  display_name: string | null;
+  text: string;
+  upvotes: number;
+  status: QaQuestionStatus;
+  created_at: string;
+}

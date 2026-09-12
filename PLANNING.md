@@ -442,38 +442,71 @@ script's internal state. This process caught and fixed one real bug (the
 `cmi.core.exit` logic above) before it shipped, and the asset-embedding
 path was checked against real network requests, not a mock.
 
-### 7.6 Live Interactive Sessions — Module B (build order step 6) — XL
+### 7.6 Live Interactive Sessions — Module B (build order step 6) — XL — **core built**
 
 The single largest remaining workstream, and the first genuinely new
-schema surface since Foundation:
+schema surface since Foundation. This pass built a real working vertical
+slice; a few things explicitly deferred to §7.7/later.
 
-- Schema: `live_sessions`, `live_slides`, `live_responses`,
-  `qa_questions` — all referenced in the spec's data model, none migrated
-  yet.
-- Session builder UI: ordered slide deck, at minimum poll, word cloud,
-  open-ended text, scale, ranking, quiz/leaderboard (with countdown timer
-  and speed-scored points), Q&A board (optionally anonymous, upvoting,
-  moderation), reaction overlay, and the "100 points" allocation slide.
-- Join flow: `/join/[code]`, QR code generation, short join code, anonymous
-  short-lived session tokens (no account required) — this is the first
-  place actual anonymous participation (distinct from anonymous *learner*
-  progress in §7.4) enters the schema.
-- Realtime fan-out via Supabase Realtime (per the §2.4 decision) so
-  responses update the presenter's and participants' screens in
-  well under a second, with graceful reconnect on a dropped connection.
-- Scale target from the spec: 1,000+ concurrent anonymous participants per
-  session — worth a load-test pass before calling this done, since it's
-  the platform's one hard real-time scaling requirement.
+- ~~Schema: `live_sessions`, `live_slides`, `live_responses`,
+  `qa_questions`.~~ Built (migration `0009`), plus a `qa_upvotes` table not
+  originally called out separately (needed for real upvote-once-per-
+  participant semantics) with a trigger keeping `qa_questions.upvotes` in
+  sync. RLS here is simpler than `learner_progress`'s was: response data
+  has no "read only my own row" requirement — a live poll's whole point is
+  that everyone sees the aggregate — so plain RLS (no `SECURITY DEFINER`
+  RPC) is correct, not a shortcut. Verified thoroughly against a real
+  Postgres instance: join-by-code read, response submission when live and
+  unlocked, submission correctly blocked once the presenter locks the
+  slide, Q&A submit/upvote, the upvote-count trigger, duplicate-upvote
+  rejection, and hidden questions correctly invisible to participants but
+  visible to the org (presenter).
+- ~~Session builder UI: ordered slide deck.~~ Built for **poll, word
+  cloud, open-ended, quiz (with countdown timer + speed-scored
+  leaderboard), and Q&A board** — five of the nine slide types the spec
+  lists. **Scale, ranking, and the "100-points" allocation slide are not
+  built** (same config-jsonb-ready-but-no-UI treatment as fill-blank/
+  matching questions earlier); a standalone **reaction overlay** is also
+  not built.
+- ~~Join flow: `/join/[code]`, QR code, anonymous short-lived session
+  tokens.~~ Built, including a real QR image (the `qrcode` package).
+  Deliberately a **separate** anonymous-identity mechanism from the
+  course-progress anon token in §7.4 (`lib/live/participant.ts`, a
+  per-session cookie) — joining two different sessions shouldn't be
+  correlatable to the same person, per the spec's anonymity requirement.
+- ~~Realtime fan-out via Supabase Realtime.~~ Wired using Postgres Changes
+  (`supabase.channel().on('postgres_changes', ...)`), tables added to the
+  `supabase_realtime` publication in the migration. **This is the one
+  piece of §7.6 that could not be verified here** — same category as
+  Storage: the actual Realtime wire service only runs via the Docker-based
+  local stack or a hosted project. Schema/RLS/trigger logic and the
+  aggregation functions (`lib/live/aggregate.ts` — poll tallying, word-
+  cloud weighting, quiz leaderboard ranking) were all verified for real;
+  the live WebSocket delivery itself needs a real `supabase start` to
+  confirm before trusting it.
+- Present mode and participant view are both built in this pass already
+  (see §7.7 below for what's still separate) — a full page each
+  (`/studio/live/[sessionId]/present`, `/join/[code]/play`), not stubs.
+- Not built: the spec's 1,000+ concurrent participant scale target has no
+  load test behind it (nothing to load-test without a live deployment),
+  and CSV export / session-library reuse (§7.7).
 
-### 7.7 Present mode (build order step 7) — L
+### 7.7 Present mode (build order step 7) — L — **partially built**
 
-- Big-screen view (cast/projector) showing the current slide and live
-  results.
-- Presenter-only control panel: response counts, next-slide, lock/unlock
-  voting, reset results, skip/reopen a slide, Q&A moderation queue,
-  session pause/resume, live participant count.
-- Post-session results page per session: per-slide breakdown, CSV export.
-- Session library: duplicate/reuse a past session as a template.
+- ~~Big-screen view showing the current slide and live results.~~ Built,
+  combined with the presenter controls on one page rather than as a
+  separate mirrored "audience display" — a real dedicated big-screen-only
+  view (no controls visible, meant for a projector) is still a follow-up.
+- ~~Presenter control panel: next-slide, lock/unlock voting, Q&A
+  moderation queue.~~ Built (`PresentClient`) — next/previous slide,
+  lock/unlock, live response counts, and a Q&A moderation panel (mark
+  answered/hidden). **Not built**: reset results, skip/reopen a specific
+  slide out of order, session pause/resume, and a live participant-count
+  indicator (would need Realtime Presence, not just Postgres Changes —
+  deferred rather than adding a second realtime mechanism in the same
+  pass).
+- Not built: post-session results page + CSV export, and session-library
+  duplicate/reuse-as-template.
 
 ### 7.8 The Bridge — Module C (build order step 8) — M
 
