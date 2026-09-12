@@ -5,6 +5,7 @@ import type { Course, Lesson, Section, Theme } from "@/lib/types/db";
 import { OutlineEditor } from "./OutlineEditor";
 import { PublishPanel } from "./PublishPanel";
 import { ThemeSelector } from "./ThemeSelector";
+import { CourseCoverField } from "./CourseCoverField";
 
 export default async function CourseOutlinePage({
   params,
@@ -42,6 +43,11 @@ export default async function CourseOutlinePage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">{(course as Course).title}</h1>
+      <CourseCoverField
+        courseId={courseId}
+        orgId={session.org.id}
+        initialUrl={(course as Course).cover_image_url}
+      />
       <ThemeSelector
         courseId={courseId}
         currentThemeId={(course as Course).theme_id}

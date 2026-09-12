@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FONT_CHOICES, type Theme } from "@/lib/types/db";
 import { updateTheme } from "../actions";
+import { FileUpload } from "@/components/FileUpload";
 
-export function ThemeEditor({ theme }: { theme: Theme }) {
+export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
   const [name, setName] = useState(theme.name);
   const [colors, setColors] = useState(theme.colors);
   const [fonts, setFonts] = useState(theme.fonts);
@@ -86,6 +87,11 @@ export function ThemeEditor({ theme }: { theme: Theme }) {
             placeholder="https://…"
           />
         </label>
+        <FileUpload orgId={orgId} accept="image/*" label="Upload logo" onUploaded={setLogoUrl} />
+        {logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="Logo preview" className="h-10 w-auto" />
+        )}
       </fieldset>
 
       <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">

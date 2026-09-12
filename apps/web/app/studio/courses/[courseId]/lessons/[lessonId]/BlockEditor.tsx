@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Block, BlockType } from "@/lib/types/db";
 import { createBlock, deleteBlock, reorderBlocks, updateBlockContent } from "@/app/studio/actions";
+import { FileUpload } from "@/components/FileUpload";
 
 const BLOCK_TYPES: { type: BlockType; label: string }[] = [
   { type: "heading", label: "Heading" },
@@ -42,10 +43,12 @@ export function BlockEditor({
   lessonId,
   initialBlocks,
   courseLessons,
+  orgId,
 }: {
   lessonId: string;
   initialBlocks: Block[];
   courseLessons: CourseLessonRef[];
+  orgId: string;
 }) {
   const [blocks, setBlocks] = useState(
     [...initialBlocks].sort((a, b) => a.order - b.order)
@@ -87,6 +90,7 @@ export function BlockEditor({
                 key={block.id}
                 block={block}
                 courseLessons={courseLessons}
+                orgId={orgId}
                 onChange={(content) => updateBlock(block.id, content)}
                 onDelete={() => removeBlock(block.id)}
               />
@@ -119,11 +123,13 @@ export function BlockEditor({
 function SortableBlock({
   block,
   courseLessons,
+  orgId,
   onChange,
   onDelete,
 }: {
   block: Block;
   courseLessons: CourseLessonRef[];
+  orgId: string;
   onChange: (content: Block["content"]) => void;
   onDelete: () => void;
 }) {
@@ -145,7 +151,7 @@ function SortableBlock({
           Delete
         </button>
       </div>
-      <BlockFields block={block} courseLessons={courseLessons} onChange={onChange} />
+      <BlockFields block={block} courseLessons={courseLessons} orgId={orgId} onChange={onChange} />
     </li>
   );
 }
@@ -153,10 +159,12 @@ function SortableBlock({
 function BlockFields({
   block,
   courseLessons,
+  orgId,
   onChange,
 }: {
   block: Block;
   courseLessons: CourseLessonRef[];
+  orgId: string;
   onChange: (content: Block["content"]) => void;
 }) {
   const inputClass =
@@ -212,8 +220,15 @@ function BlockFields({
           <input
             className={inputClass}
             placeholder="Image URL"
+            key={String(block.content.url ?? "")}
             defaultValue={String(block.content.url ?? "")}
             onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
+          />
+          <FileUpload
+            orgId={orgId}
+            accept="image/*"
+            label="Upload image"
+            onUploaded={(url) => onChange({ ...block.content, url })}
           />
           <input
             className={inputClass}
@@ -225,21 +240,39 @@ function BlockFields({
       );
     case "video":
       return (
-        <input
-          className={inputClass}
-          placeholder="Video URL or embed link (e.g. YouTube)"
-          defaultValue={String(block.content.url ?? "")}
-          onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
-        />
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Video URL or embed link (e.g. YouTube)"
+            key={String(block.content.url ?? "")}
+            defaultValue={String(block.content.url ?? "")}
+            onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
+          />
+          <FileUpload
+            orgId={orgId}
+            accept="video/*"
+            label="Upload video file"
+            onUploaded={(url) => onChange({ ...block.content, url })}
+          />
+        </div>
       );
     case "audio":
       return (
-        <input
-          className={inputClass}
-          placeholder="Audio file URL (e.g. hosted mp3)"
-          defaultValue={String(block.content.url ?? "")}
-          onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
-        />
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Audio file URL (e.g. hosted mp3)"
+            key={String(block.content.url ?? "")}
+            defaultValue={String(block.content.url ?? "")}
+            onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
+          />
+          <FileUpload
+            orgId={orgId}
+            accept="audio/*"
+            label="Upload audio file"
+            onUploaded={(url) => onChange({ ...block.content, url })}
+          />
+        </div>
       );
     case "divider":
       return <hr className="border-black/10 dark:border-white/10" />;

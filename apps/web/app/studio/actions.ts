@@ -163,6 +163,14 @@ export async function unpublishCourse(courseId: string) {
   revalidatePath(`/studio/courses/${courseId}`);
 }
 
+export async function updateCourseCover(courseId: string, coverImageUrl: string | null) {
+  await requireTier("PRO");
+  const supabase = await createClient();
+  await supabase.from("courses").update({ cover_image_url: coverImageUrl }).eq("id", courseId);
+  revalidatePath(`/studio/courses/${courseId}`);
+  revalidatePath("/studio");
+}
+
 // ---------- Sections ----------
 
 export async function createSection(courseId: string, title: string) {

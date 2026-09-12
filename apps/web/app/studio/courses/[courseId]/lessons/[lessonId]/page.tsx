@@ -11,7 +11,7 @@ export default async function LessonEditorPage({
 }: {
   params: Promise<{ courseId: string; lessonId: string }>;
 }) {
-  await requireTierOrRedirect("PRO");
+  const session = await requireTierOrRedirect("PRO");
   const { courseId, lessonId } = await params;
   const supabase = await createClient();
 
@@ -58,6 +58,7 @@ export default async function LessonEditorPage({
           lessonId={lessonId}
           initialBlocks={(blocks ?? []) as Block[]}
           courseLessons={(courseLessons ?? []).filter((l) => l.id !== lessonId)}
+          orgId={session.org.id}
         />
       ) : (
         <QuizEditor

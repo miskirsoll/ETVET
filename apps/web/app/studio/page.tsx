@@ -38,9 +38,24 @@ export default async function CoursesDashboard() {
             key={course.id}
             className="flex items-center justify-between rounded border border-black/10 px-4 py-3 dark:border-white/10"
           >
-            <Link href={`/studio/courses/${course.id}`} className="flex-1 hover:underline">
-              <span className="font-medium">{course.title}</span>{" "}
-              <span className="text-xs text-black/50 dark:text-white/50">{course.status}</span>
+            <Link
+              href={`/studio/courses/${course.id}`}
+              className="flex flex-1 items-center gap-3 hover:underline"
+            >
+              {course.cover_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={course.cover_image_url}
+                  alt=""
+                  className="h-10 w-16 shrink-0 rounded object-cover"
+                />
+              ) : (
+                <div className="h-10 w-16 shrink-0 rounded bg-black/5 dark:bg-white/5" />
+              )}
+              <span>
+                <span className="font-medium">{course.title}</span>{" "}
+                <span className="text-xs text-black/50 dark:text-white/50">{course.status}</span>
+              </span>
             </Link>
             <div className="flex gap-2">
               <form action={duplicateCourse}>

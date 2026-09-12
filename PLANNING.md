@@ -285,16 +285,42 @@ folded into §7.4 rather than treated as implicit.
   Postgres instance: an anonymous role can read a theme attached to a
   published course, but not one that exists only in draft/unpublished form.
 
-### 7.3 Media storage & uploads — M
+### 7.3 Media storage & uploads — M — **done, but unverified** (see caveat)
 
-- Supabase Storage buckets (images, video, audio, fonts, logos) with
-  per-org path scoping and per-tier storage limits (spec: "limited" on
-  FREE, "extended" on PRO/MAXPRO).
-- Replace the current URL-only image/video blocks with real upload
-  widgets; add the image-cropping tool the spec calls out.
-- Audio block with upload **and** in-browser recording.
-- Extend RLS-equivalent access rules to Storage policies (bucket policies
-  mirroring the `org_id` scoping already enforced on the tables).
+- ~~Audio block~~ Built as a separate pass, URL-based like Video (verified
+  the same way as everything else — build/lint/DB-tested).
+- ~~Supabase Storage bucket, org-scoped by path prefix.~~ Built: a single
+  public `media` bucket (migration `0008`), RLS on `storage.objects`
+  mirroring the `org_id` scoping every other table already has, applied to
+  a stub of the `storage` schema and confirmed the policy logic actually
+  works — an org can upload into its own path prefix, not another org's.
+- ~~Replace URL-only image/video blocks with real upload widgets~~ Built:
+  a reusable `<FileUpload>` component, wired into the image, video, and
+  audio blocks (alongside the existing URL field, not instead of it), the
+  theme editor's logo field, and a **newly surfaced course cover-image
+  field** (`courses.cover_image_url` was already migrated and used by
+  `duplicateCourse`, but had no UI at all until now — another small gap
+  found in passing, same pattern as Continue/Button/Audio).
+- **Important caveat, unlike every other migration/feature in this repo:
+  the actual file-upload path has NOT been run against a real Supabase
+  Storage service.** This sandbox has no Docker daemon, and Storage (the
+  service that actually stores and serves bytes, not just the
+  `storage.objects` metadata row) only runs via the Docker-based local
+  stack or a hosted project. What *was* verified: the RLS policy logic
+  against a hand-built stub of the `storage` schema (org-scoped
+  insert/update/delete correctly allowed/denied), and that the app builds,
+  lints, and doesn't crash at runtime with the upload UI present. What
+  was *not* verified: an actual `supabase.storage.upload()` call
+  succeeding, `getPublicUrl()` returning a working URL, or the bucket
+  actually being created correctly by `insert into storage.buckets`
+  (Storage may have its own bucket-creation API/expectations beyond a
+  plain table insert — this follows the commonly-documented pattern but
+  needs a real `supabase start` to confirm). **Test this before relying on
+  it** — upload a real image through `/studio` against a local Supabase
+  instance and confirm it renders back on the published course.
+- Not built: image cropping, in-browser audio recording, custom font
+  upload, per-tier storage limits (FREE vs PRO/MAXPRO quotas), and a
+  stock cover-photo library.
 
 ### 7.4 Preview, publish, and the public learner experience — XL — **done** (core)
 
