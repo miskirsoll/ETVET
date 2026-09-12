@@ -7,7 +7,7 @@ export default async function Home() {
   if (session) redirect("/studio");
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-6 px-6 text-center">
       <h1 className="text-4xl font-bold">ETVET</h1>
       <p className="text-lg text-black/70 dark:text-white/70">
         Author self-paced courses and run live interactive sessions, from one
@@ -27,6 +27,6 @@ export default async function Home() {
           Sign in
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

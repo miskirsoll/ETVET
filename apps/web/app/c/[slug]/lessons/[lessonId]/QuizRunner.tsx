@@ -122,22 +122,26 @@ export function QuizRunner({
       <ol className="flex flex-col gap-5">
         {activeQuestions.map((question, index) => (
           <li key={question.id} className="rounded border border-black/10 p-4 dark:border-white/10">
-            <p className="mb-3 font-medium">
-              {index + 1}. {question.prompt}
-            </p>
-            <ul className="flex flex-col gap-2 text-sm">
-              {(choicesByQuestion[question.id] ?? []).map((choice) => (
-                <li key={choice.id} className="flex items-center gap-2">
-                  <input
-                    type={question.type === "multiple_response" ? "checkbox" : "radio"}
-                    name={`q-${question.id}`}
-                    checked={(answers[question.id] ?? []).includes(choice.id)}
-                    onChange={() => toggle(question, choice.id)}
-                  />
-                  <span>{choice.text}</span>
-                </li>
-              ))}
-            </ul>
+            <fieldset className="m-0 border-0 p-0">
+              <legend className="mb-3 w-full font-medium">
+                {index + 1}. {question.prompt}
+              </legend>
+              <ul className="flex flex-col gap-2 text-sm">
+                {(choicesByQuestion[question.id] ?? []).map((choice) => (
+                  <li key={choice.id}>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type={question.type === "multiple_response" ? "checkbox" : "radio"}
+                        name={`q-${question.id}`}
+                        checked={(answers[question.id] ?? []).includes(choice.id)}
+                        onChange={() => toggle(question, choice.id)}
+                      />
+                      <span>{choice.text}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
           </li>
         ))}
       </ol>

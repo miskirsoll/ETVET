@@ -109,14 +109,18 @@ Open http://localhost:3000.
 
 ## Automated tests
 
-Two separate test suites, from `apps/web`:
+Three separate test suites, from `apps/web`:
 
 ```bash
-npm test        # vitest -- pure logic: analytics, live-session aggregation,
-                 # course ordering, SCORM manifest/suspend-data
+npm test         # vitest -- pure logic: analytics, live-session aggregation,
+                  # course ordering, SCORM manifest/suspend-data, WCAG contrast math
 npm run test:db  # supabase/tests/run.sh -- RLS/migration behavior against
-                 # a throwaway local Postgres (needs `sudo -u postgres psql`
-                 # access; see supabase/tests/00_stub.sql for what it stubs)
+                  # a throwaway local Postgres (needs `sudo -u postgres psql`
+                  # access; see supabase/tests/00_stub.sql for what it stubs)
+npm run test:a11y  # scripts/a11y-scan.mjs -- axe-core scan of the pages that
+                    # render without a live backend (/, /login, /signup, /join/*);
+                    # needs `npm run dev` already running against a placeholder
+                    # .env.local (see below)
 ```
 
 `test:db` drops and recreates a scratch `etvet_test` database each run, so

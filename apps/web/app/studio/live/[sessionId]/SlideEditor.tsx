@@ -5,12 +5,14 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
@@ -35,7 +37,10 @@ export function SlideEditor({
   initialSlides: LiveSlide[];
 }) {
   const [slides, setSlides] = useState([...initialSlides].sort((a, b) => a.order - b.order));
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -119,9 +124,15 @@ function SortableSlide({
       className="rounded border border-black/10 p-4 dark:border-white/10"
     >
       <div className="mb-3 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
-        <span {...attributes} {...listeners} className="cursor-grab uppercase tracking-wide">
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label={`Drag to reorder slide ${index + 1}`}
+          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+        >
           ⠿ Slide {index + 1} — {slide.type.replace("_", " ")}
-        </span>
+        </button>
         <button onClick={onDelete} className="text-red-600 hover:underline">
           Delete
         </button>

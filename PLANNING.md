@@ -719,14 +719,74 @@ slice; a few things explicitly deferred to §7.7/later.
   now); Super Admin console — cross-org platform management, still
   lowest priority, internal/operator surface, not customer-facing.
 
-### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit
+### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit — **first pass done**
 
-- Full keyboard navigation, screen-reader compatibility, alt-text fields
-  on every image block, caption/transcript support on video/audio,
-  enforced color-contrast in the theme editor (§7.2).
-- Best treated as a standing requirement on every new UI PR rather than
-  a single step, plus one dedicated audit pass before calling any tier
-  "launch ready."
+- ~~Full keyboard navigation~~ Fixed: every drag-and-drop reorder surface
+  (course outline's sections/lessons, block editor, quiz editor, live
+  session slide editor — 5 `useSensors()` call sites) only had
+  `PointerSensor`, making them entirely unreorderable without a mouse —
+  a hard WCAG 2.1.1 failure. All five now also register `KeyboardSensor`
+  (`sortableKeyboardCoordinates`). Every drag handle was also a `<span>`
+  (not natively focusable/keyboard-activatable), several icon-only
+  (just the "⠿" glyph, no accessible name at all) — all converted to
+  real `<button type="button">`s with a descriptive `aria-label`
+  ("Drag to reorder lesson: {title}", etc.).
+- ~~Screen-reader compatibility~~ Partially addressed: the learner-facing
+  quiz (`QuizRunner.tsx`) had answer-choice text as a sibling `<span>` next
+  to its radio/checkbox, not associated via a `<label>`, and no
+  `<fieldset>/<legend>` grouping each question's options — a screen
+  reader announced neither what a given input was for nor which question
+  it belonged to. Fixed with a `<fieldset><legend>{prompt}</legend>` per
+  question and `<label>` wrapping each choice. The equivalent author-side
+  answer-key editor (`QuizEditor.tsx`) got an `aria-label` on the
+  correct-answer toggle but not the full `fieldset`/`legend` treatment
+  (the prompt there is an editable `<textarea>`, awkward as a `<legend>`)
+  — left as a follow-up. Six standalone pages/branches
+  (`/`, `/login`, `/signup`, the course password gate, `/upgrade`,
+  `/join/[code]` and its "not live" branch, `/join/[code]/play`) had no
+  `<main>` landmark at all — found via a real axe-core scan (see below),
+  not just code reading — and now do.
+- ~~Alt-text fields on every image block~~ Already existed
+  (`BlockEditor.tsx`'s image fields include an alt-text input, correctly
+  read by the public renderer) — no change needed here.
+- ~~Caption/transcript support on video/audio~~ Built: both blocks now
+  have a transcript textarea in the studio editor
+  (`content.transcript`), rendered as a collapsible `<details>/<summary>`
+  "Transcript" section under the player on the public course renderer.
+  Deliberately a plain-text transcript, not synced WebVTT captions —
+  matching the "Audio as URL-only" precedent of picking the pragmatic,
+  buildable version of a requirement over the fuller spec when there's no
+  file-hosting/authoring infra to back the fuller version yet.
+- ~~Enforced color-contrast in the theme editor~~ Built: a WCAG
+  contrast-ratio utility (`lib/theme/contrast.ts`, unit-tested) computes
+  text-on-background (needs 4.5:1) and primary-on-background (needs 3:1,
+  the "large text/UI component" threshold, since primary colors buttons/
+  links) live as an author edits a theme's colors, with a prominent
+  `role="alert"` warning — not a blocked save, since an author mid-way
+  through picking a palette shouldn't be locked out of saving unrelated
+  changes over one still-unfinished color pair, but the gap can't be
+  missed either.
+- **Verified two ways**: unit tests for the contrast math and a real
+  axe-core scan (`npm run test:a11y`, via Playwright against the
+  pre-installed Chromium) of every page reachable without a live backend
+  — `/`, `/login`, `/signup` (with and without a bogus invite token), and
+  `/join/[code]` for a nonexistent code — all pass with zero violations
+  after the `<main>`-landmark fixes above. This is real, tool-verified
+  confirmation, not a code-reading claim, for the pages it can reach;
+  everything behind `requireTierOrRedirect`/auth (the actual studio
+  editor, the public course renderer with real content, live session
+  present/play views) still can't be scanned this way without a working
+  local Supabase project (same Docker limitation as everywhere else in
+  this build) and remains unaudited beyond the manual code-level fixes
+  above.
+- Not built: a dedicated final audit pass against real authenticated
+  content once a real Supabase project exists (see §7.14); a "decorative
+  image" toggle (an author currently can't explicitly mark `alt=""` as
+  intentional vs. just forgetting); the author-side quiz editor's
+  fieldset/legend grouping (noted above).
+- Best treated as a standing requirement on every new UI PR going
+  forward, per the original plan — this pass fixed everything findable
+  without a live backend, not a one-time "done."
 
 ### 7.14 Testing & production readiness — M, ongoing — **automated test suite added**
 

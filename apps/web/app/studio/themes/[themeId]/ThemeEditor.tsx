@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FONT_CHOICES, type Theme } from "@/lib/types/db";
 import { updateTheme } from "../actions";
 import { FileUpload } from "@/components/FileUpload";
+import { contrastRatio, meetsWcagAA } from "@/lib/theme/contrast";
 
 export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
   const [name, setName] = useState(theme.name);
@@ -30,6 +31,9 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
 
   const inputClass = "rounded border border-black/10 px-3 py-2 text-sm dark:border-white/20";
 
+  const textOnBackground = contrastRatio(colors.text, colors.background);
+  const primaryOnBackground = contrastRatio(colors.primary, colors.background);
+
   return (
     <div className="flex flex-col gap-6">
       <label className="flex flex-col gap-1 text-sm">
@@ -54,6 +58,18 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
             />
           </label>
         ))}
+        <div className="flex flex-col gap-1 border-t border-black/10 pt-3 text-xs dark:border-white/10">
+          <ContrastCheck
+            label="Body text on background"
+            ratio={textOnBackground}
+            required={4.5}
+          />
+          <ContrastCheck
+            label="Primary (buttons/links) on background"
+            ratio={primaryOnBackground}
+            required={3}
+          />
+        </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-3 rounded border border-black/10 p-4 dark:border-white/10">
@@ -124,5 +140,32 @@ export function ThemeEditor({ theme, orgId }: { theme: Theme; orgId: string }) {
         {saved ? "Saved" : "Save theme"}
       </button>
     </div>
+  );
+}
+
+/**
+ * A soft warning, not a blocked save -- an author mid-way through picking
+ * a palette shouldn't be locked out of saving other changes because one
+ * color pair isn't finalized yet. The point is that the gap can't be
+ * missed, not that it can't be shipped.
+ */
+function ContrastCheck({
+  label,
+  ratio,
+  required,
+}: {
+  label: string;
+  ratio: number;
+  required: 3 | 4.5;
+}) {
+  const passes = meetsWcagAA(ratio, required === 3);
+  return (
+    <p
+      role={passes ? undefined : "alert"}
+      className={passes ? "text-black/50 dark:text-white/50" : "font-medium text-red-600"}
+    >
+      {passes ? "✓" : "⚠"} {label}: {ratio.toFixed(1)}:1 (WCAG AA needs {required}:1
+      {passes ? ", passes" : " — too low"})
+    </p>
   );
 }

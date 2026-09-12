@@ -5,12 +5,14 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
@@ -68,7 +70,10 @@ export function BlockEditor({
     [...initialBlocks].sort((a, b) => a.order - b.order)
   );
   const [interactiveBlocks, setInteractiveBlocks] = useState(interactiveBlocksByBlockId);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -183,9 +188,15 @@ function SortableBlock({
       className="rounded border border-black/10 p-4 dark:border-white/10"
     >
       <div className="mb-2 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
-        <span {...attributes} {...listeners} className="cursor-grab uppercase tracking-wide">
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label={`Drag to reorder block: ${block.type}`}
+          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+        >
           ⠿ {block.type}
-        </span>
+        </button>
         <button onClick={onDelete} className="text-red-600 hover:underline">
           Delete
         </button>
@@ -362,6 +373,13 @@ function BlockFields({
             label="Upload video file"
             onUploaded={(url) => onChange({ ...block.content, url })}
           />
+          <textarea
+            className={inputClass}
+            placeholder="Transcript (shown as text below the video, for anyone who can't watch/hear it)"
+            rows={3}
+            defaultValue={String(block.content.transcript ?? "")}
+            onBlur={(e) => onChange({ ...block.content, transcript: e.target.value })}
+          />
         </div>
       );
     case "audio":
@@ -379,6 +397,13 @@ function BlockFields({
             accept="audio/*"
             label="Upload audio file"
             onUploaded={(url) => onChange({ ...block.content, url })}
+          />
+          <textarea
+            className={inputClass}
+            placeholder="Transcript (shown as text below the player, for anyone who can't listen)"
+            rows={3}
+            defaultValue={String(block.content.transcript ?? "")}
+            onBlur={(e) => onChange({ ...block.content, transcript: e.target.value })}
           />
         </div>
       );

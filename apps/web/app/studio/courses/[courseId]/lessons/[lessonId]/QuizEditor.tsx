@@ -5,12 +5,14 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
@@ -60,7 +62,10 @@ export function QuizEditor({
       return map;
     }
   );
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -260,9 +265,15 @@ function SortableQuestion({
       className="rounded border border-black/10 p-4 dark:border-white/10"
     >
       <div className="mb-3 flex items-center justify-between text-xs text-black/40 dark:text-white/40">
-        <span {...attributes} {...listeners} className="cursor-grab uppercase tracking-wide">
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label={`Drag to reorder question ${index + 1}`}
+          className="cursor-grab bg-transparent p-0 uppercase tracking-wide"
+        >
           ⠿ Question {index + 1} — {question.type.replace("_", " ")}
-        </span>
+        </button>
         <button onClick={onDelete} className="text-red-600 hover:underline">
           Delete
         </button>
@@ -283,6 +294,7 @@ function SortableQuestion({
               name={`question-${question.id}`}
               checked={choice.is_correct}
               onChange={() => markCorrect(choice.id)}
+              aria-label={`Mark "${choice.text || "this choice"}" as the correct answer`}
             />
             {canEditChoiceText ? (
               <input

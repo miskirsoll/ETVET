@@ -42,7 +42,7 @@ export default async function UpgradePage({
   const isOrgAdmin = session.appUser.role === "ORG_ADMIN" || session.appUser.role === "SUPER_ADMIN";
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-6 py-12">
       <div>
         <h1 className="text-2xl font-semibold">Plans</h1>
         <p className="mt-1 text-sm text-black/60 dark:text-white/60">
@@ -84,6 +84,6 @@ export default async function UpgradePage({
           </div>
         ))}
       </div>
-    </div>
+    </main>
   );
 }

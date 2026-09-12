@@ -42,15 +42,15 @@ export function PlayClient({ session, slides }: { session: LiveSession; slides: 
 
   if (status === "ended") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
+      <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
         <h1 className="text-xl font-semibold">Session ended</h1>
         <p className="mt-2 text-sm text-black/60 dark:text-white/60">Thanks for participating!</p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-6 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-6 py-8">
       <div className="flex items-center justify-between text-sm">
         <h1 className="font-semibold">{session.title}</h1>
         <button onClick={() => setShowQa((v) => !v)} className="hover:underline">
@@ -74,7 +74,7 @@ export function PlayClient({ session, slides }: { session: LiveSession; slides: 
           Waiting for the presenter to start a slide…
         </p>
       )}
-    </div>
+    </main>
   );
 }
 

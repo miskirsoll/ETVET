@@ -24,7 +24,7 @@ export default async function SignupPage({
   const validInvite = invite?.valid ? invite : null;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6">
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6">
       <div>
         <h1 className="text-2xl font-semibold">
           {validInvite ? `Join ${validInvite.org_name}` : "Create your ETVET organization"}
@@ -42,6 +42,6 @@ export default async function SignupPage({
         )}
       </div>
       <SignupForm inviteToken={validInvite ? inviteToken! : undefined} />
-    </div>
+    </main>
   );
 }

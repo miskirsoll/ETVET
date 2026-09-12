@@ -7,12 +7,14 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
@@ -42,7 +44,10 @@ export function OutlineEditor({
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [, startTransition] = useTransition();
   const router = useRouter();
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -124,7 +129,10 @@ function SortableSection({
     id: section.id,
   });
   const [newLessonTitle, setNewLessonTitle] = useState("");
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   function onLessonDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -150,7 +158,13 @@ function SortableSection({
       className="rounded border border-black/10 p-4 dark:border-white/10"
     >
       <div className="flex items-center justify-between">
-        <button {...attributes} {...listeners} className="cursor-grab font-medium">
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label={`Drag to reorder section: ${section.title}`}
+          className="cursor-grab font-medium"
+        >
           ⠿ {section.title}
         </button>
         <button
@@ -225,9 +239,15 @@ function SortableLesson({
       className="flex items-center justify-between rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10"
     >
       <div className="flex items-center gap-2">
-        <span {...attributes} {...listeners} className="cursor-grab">
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label={`Drag to reorder lesson: ${lesson.title}`}
+          className="cursor-grab bg-transparent p-0"
+        >
           ⠿
-        </span>
+        </button>
         <Link href={`/studio/courses/${courseId}/lessons/${lesson.id}`} className="hover:underline">
           {lesson.title}
         </Link>

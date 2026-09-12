@@ -102,18 +102,24 @@ function renderBlock(
       ) : null;
     case "video":
       return block.content.url ? (
-        <div className="aspect-video w-full overflow-hidden rounded">
-          <iframe
-            src={String(block.content.url)}
-            className="h-full w-full"
-            allowFullScreen
-            title="Video"
-          />
+        <div className="flex flex-col gap-2">
+          <div className="aspect-video w-full overflow-hidden rounded">
+            <iframe
+              src={String(block.content.url)}
+              className="h-full w-full"
+              allowFullScreen
+              title="Video"
+            />
+          </div>
+          <Transcript text={block.content.transcript} />
         </div>
       ) : null;
     case "audio":
       return block.content.url ? (
-        <audio controls src={String(block.content.url)} className="w-full" />
+        <div className="flex flex-col gap-2">
+          <audio controls src={String(block.content.url)} className="w-full" />
+          <Transcript text={block.content.transcript} />
+        </div>
       ) : null;
     case "divider":
       return <hr className="border-black/10 dark:border-white/10" />;
@@ -160,4 +166,15 @@ function renderBlock(
     default:
       return null;
   }
+}
+
+function Transcript({ text }: { text: unknown }) {
+  const value = String(text ?? "").trim();
+  if (!value) return null;
+  return (
+    <details className="rounded border border-black/10 p-3 text-sm dark:border-white/10">
+      <summary className="cursor-pointer font-medium">Transcript</summary>
+      <p className="mt-2 whitespace-pre-wrap">{value}</p>
+    </details>
+  );
 }
