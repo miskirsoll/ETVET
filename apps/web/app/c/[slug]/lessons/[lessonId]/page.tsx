@@ -8,6 +8,7 @@ import {
   getCourseOutline,
   getProgressMap,
   flattenLessonOrder,
+  getCourseTheme,
 } from "../../data";
 import { CourseShell } from "../../CourseShell";
 import { BlockView } from "./BlockView";
@@ -35,6 +36,7 @@ export default async function LessonPage({
 
   const key = await getLearnerKey();
   const progress = await getProgressMap(course.id, key);
+  const theme = await getCourseTheme(course.theme_id);
   const ordered = flattenLessonOrder(sections, lessons);
   const index = ordered.findIndex((l) => l.id === lessonId);
 
@@ -67,11 +69,22 @@ export default async function LessonPage({
         lessons={lessons}
         progress={progress}
         activeLessonId={lessonId}
+        theme={theme}
       >
         <h1 className="mb-6 text-2xl font-semibold">{lesson.title}</h1>
-        <BlockView blocks={(blocks ?? []) as Block[]} slug={slug} nextHref={nextHref} />
+        <BlockView
+          blocks={(blocks ?? []) as Block[]}
+          slug={slug}
+          nextHref={nextHref}
+          theme={theme}
+        />
         <div className="mt-8">
-          <CompleteButton courseId={course.id} lessonId={lessonId} nextHref={nextHref} />
+          <CompleteButton
+            courseId={course.id}
+            lessonId={lessonId}
+            nextHref={nextHref}
+            accentColor={theme?.colors.primary}
+          />
         </div>
       </CourseShell>
     );
@@ -99,6 +112,7 @@ export default async function LessonPage({
       lessons={lessons}
       progress={progress}
       activeLessonId={lessonId}
+      theme={theme}
     >
       <h1 className="mb-6 text-2xl font-semibold">{lesson.title}</h1>
       <QuizRunner
@@ -107,6 +121,7 @@ export default async function LessonPage({
         questions={(questions ?? []) as Question[]}
         choicesByQuestion={choicesByQuestion}
         nextHref={nextHref}
+        accentColor={theme?.colors.primary}
       />
     </CourseShell>
   );

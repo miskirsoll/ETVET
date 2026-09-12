@@ -21,6 +21,9 @@ export default async function StudioLayout({
             <Link href="/studio" className="hover:underline">
               Courses
             </Link>
+            <Link href="/studio/themes" className="hover:underline">
+              Themes
+            </Link>
             <Link href="/studio/live" className="hover:underline">
               Live Sessions
             </Link>

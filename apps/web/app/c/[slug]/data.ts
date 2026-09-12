@@ -1,7 +1,14 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { Course, Lesson, LearnerProgress, Section } from "@/lib/types/db";
+import type { Course, Lesson, LearnerProgress, Section, Theme } from "@/lib/types/db";
 import type { LearnerKey } from "@/lib/learner/session";
+
+export async function getCourseTheme(themeId: string | null): Promise<Theme | null> {
+  if (!themeId) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("themes").select("*").eq("id", themeId).maybeSingle();
+  return data as Theme | null;
+}
 
 export async function getPublishedCourseBySlug(slug: string): Promise<Course | null> {
   const supabase = await createClient();

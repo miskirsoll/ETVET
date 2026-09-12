@@ -26,6 +26,56 @@ export interface AppUser {
   created_at: string;
 }
 
+export interface ThemeColors {
+  primary: string;
+  background: string;
+  text: string;
+}
+
+export interface ThemeFonts {
+  heading: string;
+  body: string;
+}
+
+export interface ThemeLayoutConfig {
+  width: "narrow" | "wide";
+  animations: boolean;
+}
+
+export interface Theme {
+  id: string;
+  org_id: string;
+  name: string;
+  colors: ThemeColors;
+  fonts: ThemeFonts;
+  logo_url: string | null;
+  layout_config: ThemeLayoutConfig;
+  created_at: string;
+}
+
+export const DEFAULT_THEME_COLORS: ThemeColors = {
+  primary: "#171717",
+  background: "#ffffff",
+  text: "#171717",
+};
+
+export const DEFAULT_THEME_FONTS: ThemeFonts = {
+  heading: "system-ui, sans-serif",
+  body: "system-ui, sans-serif",
+};
+
+export const DEFAULT_THEME_LAYOUT: ThemeLayoutConfig = {
+  width: "narrow",
+  animations: true,
+};
+
+export const FONT_CHOICES = [
+  { label: "System UI", value: "system-ui, sans-serif" },
+  { label: "Serif", value: "Georgia, serif" },
+  { label: "Monospace", value: "ui-monospace, monospace" },
+  { label: "Rounded", value: "'Trebuchet MS', sans-serif" },
+];
+
 export interface Course {
   id: string;
   org_id: string;

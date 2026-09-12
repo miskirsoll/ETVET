@@ -258,15 +258,32 @@ folded into §7.4 rather than treated as implicit.
   computation) — that's a learner-facing concern and waits on §7.4's
   public renderer, same reasoning as the Block Lesson editor.
 
-### 7.2 Theming & branding — M
+### 7.2 Theming & branding — M — **done** (core), URL-based media pending §7.3
 
-- Theme editor UI over the `themes` table (already migrated, never
-  surfaced in the UI): color palette, font picker + custom font upload,
-  logo upload, cover photo (own upload or a stock library), layout choice,
-  block-entrance-animation toggle.
-- Apply the selected theme when rendering both the authoring preview and
-  the published course.
-- Depends on §7.3 for font/logo/cover uploads.
+- ~~Theme editor UI over the `themes` table: color palette, font picker,
+  layout choice, block-entrance-animation toggle.~~ Built — `/studio/themes`
+  (list/create) and `/studio/themes/[themeId]` (edit), assignable per
+  course from the outline page's `ThemeSelector`. Font upload and a stock
+  cover-photo library are not built (font choice is currently a fixed list
+  of web-safe fonts, no custom upload); logo/cover are URL fields for now,
+  same simplification the image block started with, upgraded once §7.3
+  lands actual file upload.
+- ~~Apply the selected theme when rendering the published course.~~ Built:
+  `CourseShell` applies background/text color and body font once on the
+  outer wrapper (both are inherited CSS properties, so this themes every
+  descendant that doesn't set its own explicit color/font), plus a primary-
+  color accent on buttons/active links and the animation toggle on each
+  block in `BlockView`. Applying the theme to the **authoring** preview is
+  still pending (there's no preview frame yet at all, per §7.4).
+- **Found and fixed while wiring this in**: the `themes` table had no
+  public-read RLS policy at all — a published course's anonymous visitor
+  could never have read its own theme. Same gap pattern as the earlier
+  `learner_progress` findings, just simpler to close since a theme *is*
+  safely identifiable by a plain "does some published course point at
+  this theme.id" `EXISTS` check (no unverifiable-token problem here,
+  unlike anon_token) — fixed in migration `0007`, verified against a real
+  Postgres instance: an anonymous role can read a theme attached to a
+  published course, but not one that exists only in draft/unpublished form.
 
 ### 7.3 Media storage & uploads — M
 

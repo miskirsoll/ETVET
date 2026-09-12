@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Block } from "@/lib/types/db";
+import type { Block, Theme } from "@/lib/types/db";
 
 /** Splits into runs that end right after (and include) each 'continue' block. */
 function splitIntoSegments(blocks: Block[]): Block[][] {
@@ -17,22 +17,26 @@ export function BlockView({
   blocks,
   slug,
   nextHref,
+  theme,
 }: {
   blocks: Block[];
   slug: string;
   nextHref: string | null;
+  theme?: Theme | null;
 }) {
   const segments = splitIntoSegments([...blocks].sort((a, b) => a.order - b.order));
   const [revealedCount, setRevealedCount] = useState(1);
   const visible = segments.slice(0, revealedCount).flatMap((segment, segmentIndex) =>
     segment.map((block) => ({ block, segmentIndex }))
   );
+  const animate = theme ? theme.layout_config.animations : true;
+  const accentColor = theme?.colors.primary;
 
   return (
     <div className="flex flex-col gap-6">
       {visible.map(({ block, segmentIndex }) => (
-        <div key={block.id}>
-          {renderBlock(block, slug, nextHref, () =>
+        <div key={block.id} className={animate ? "etvet-animate-in" : undefined}>
+          {renderBlock(block, slug, nextHref, accentColor, () =>
             setRevealedCount((c) => Math.max(c, segmentIndex + 2))
           )}
         </div>
@@ -45,6 +49,7 @@ function renderBlock(
   block: Block,
   slug: string,
   nextHref: string | null,
+  accentColor: string | undefined,
   onContinue: () => void
 ) {
   switch (block.type) {
@@ -104,6 +109,7 @@ function renderBlock(
         <button
           onClick={onContinue}
           className="rounded bg-foreground px-5 py-2.5 text-sm text-background"
+          style={accentColor ? { backgroundColor: accentColor } : undefined}
         >
           {String(block.content.label ?? "Continue")}
         </button>
@@ -125,6 +131,7 @@ function renderBlock(
           target={isExternal ? "_blank" : undefined}
           rel={isExternal ? "noreferrer" : undefined}
           className="inline-block rounded border border-black/15 px-5 py-2.5 text-sm dark:border-white/20"
+          style={accentColor ? { borderColor: accentColor, color: accentColor } : undefined}
         >
           {label}
         </a>

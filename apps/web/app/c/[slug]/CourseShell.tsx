@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Course, Lesson, LearnerProgress, Section } from "@/lib/types/db";
+import type { Course, Lesson, LearnerProgress, Section, Theme } from "@/lib/types/db";
 import { flattenLessonOrder } from "./data";
 
 function isUnlocked(
@@ -27,6 +27,7 @@ export function CourseShell({
   lessons,
   progress,
   activeLessonId,
+  theme,
   children,
 }: {
   course: Course;
@@ -34,9 +35,22 @@ export function CourseShell({
   lessons: Lesson[];
   progress: Record<string, LearnerProgress>;
   activeLessonId?: string;
+  theme?: Theme | null;
   children: React.ReactNode;
 }) {
   const ordered = flattenLessonOrder(sections, lessons);
+  const wideLayout = theme?.layout_config?.width === "wide";
+  // color/font-family are inherited CSS properties, so setting them once on
+  // the outer wrapper is enough to theme every descendant (headings, block
+  // content, etc.) that doesn't set its own explicit color/font class.
+  const themeStyle: React.CSSProperties | undefined = theme
+    ? {
+        backgroundColor: theme.colors.background,
+        color: theme.colors.text,
+        fontFamily: theme.fonts.body,
+      }
+    : undefined;
+  const accentColor = theme?.colors.primary;
   const showSidebar = course.nav_settings.sidebar !== "off";
   const collapsed = course.nav_settings.sidebar === "hidden";
 
@@ -73,6 +87,7 @@ export function CourseShell({
                       <Link
                         href={`/c/${course.publish_slug}/lessons/${lesson.id}`}
                         className={isActive ? "font-semibold underline" : "hover:underline"}
+                        style={isActive && accentColor ? { color: accentColor } : undefined}
                       >
                         {badge && <span className="mr-1">{badge}</span>}
                         {lesson.title}
@@ -87,7 +102,12 @@ export function CourseShell({
   );
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8 sm:flex-row">
+    <div
+      className={`mx-auto flex min-h-screen flex-col gap-6 px-4 py-8 sm:flex-row ${
+        wideLayout ? "max-w-7xl" : "max-w-5xl"
+      }`}
+      style={themeStyle}
+    >
       {showSidebar &&
         (collapsed ? (
           <details className="sm:hidden">
@@ -97,10 +117,20 @@ export function CourseShell({
         ) : null)}
       {showSidebar && (
         <aside className={`w-full shrink-0 sm:w-56 ${collapsed ? "hidden sm:block" : ""}`}>
+          {theme?.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={theme.logo_url} alt="" className="mb-4 h-8 w-auto" />
+          )}
           {sidebar}
         </aside>
       )}
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1">
+        {!showSidebar && theme?.logo_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={theme.logo_url} alt="" className="mb-4 h-8 w-auto" />
+        )}
+        {children}
+      </main>
     </div>
   );
 }

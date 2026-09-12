@@ -8,10 +8,12 @@ export function CompleteButton({
   courseId,
   lessonId,
   nextHref,
+  accentColor,
 }: {
   courseId: string;
   lessonId: string;
   nextHref: string | null;
+  accentColor?: string;
 }) {
   const startedAt = useRef<number | null>(null);
   useEffect(() => {
@@ -33,6 +35,7 @@ export function CompleteButton({
       onClick={onClick}
       disabled={pending}
       className="self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
+      style={accentColor ? { backgroundColor: accentColor } : undefined}
     >
       {pending ? "Saving…" : nextHref ? "Complete & continue →" : "Mark complete"}
     </button>

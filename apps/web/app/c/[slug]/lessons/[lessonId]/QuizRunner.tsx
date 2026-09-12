@@ -20,12 +20,14 @@ export function QuizRunner({
   questions,
   choicesByQuestion,
   nextHref,
+  accentColor,
 }: {
   courseId: string;
   lesson: Lesson;
   questions: Question[];
   choicesByQuestion: Record<string, QuestionChoice[]>;
   nextHref: string | null;
+  accentColor?: string;
 }) {
   const activeQuestions = useMemo(() => {
     const sorted = [...questions].sort((a, b) => a.order - b.order);
@@ -94,7 +96,11 @@ export function QuizRunner({
             </button>
           )}
           {result.passed && nextHref && (
-            <Link href={nextHref} className="rounded bg-foreground px-4 py-2 text-sm text-background">
+            <Link
+              href={nextHref}
+              className="rounded bg-foreground px-4 py-2 text-sm text-background"
+              style={accentColor ? { backgroundColor: accentColor } : undefined}
+            >
               Next lesson →
             </Link>
           )}
@@ -139,6 +145,7 @@ export function QuizRunner({
         onClick={submit}
         disabled={submitting}
         className="self-start rounded bg-foreground px-5 py-2.5 text-sm text-background disabled:opacity-50"
+        style={accentColor ? { backgroundColor: accentColor } : undefined}
       >
         {submitting ? "Submitting…" : "Submit"}
       </button>

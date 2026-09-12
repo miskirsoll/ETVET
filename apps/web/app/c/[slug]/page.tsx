@@ -2,7 +2,13 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { getLearnerKey } from "@/lib/learner/session";
-import { getPublishedCourseBySlug, getCourseOutline, getProgressMap, flattenLessonOrder } from "./data";
+import {
+  getPublishedCourseBySlug,
+  getCourseOutline,
+  getProgressMap,
+  flattenLessonOrder,
+  getCourseTheme,
+} from "./data";
 import { PasswordForm } from "./PasswordForm";
 import { CourseShell } from "./CourseShell";
 
@@ -24,6 +30,7 @@ export default async function CourseLandingPage({
   const { sections, lessons } = await getCourseOutline(course.id);
   const key = await getLearnerKey();
   const progress = await getProgressMap(course.id, key);
+  const theme = await getCourseTheme(course.theme_id);
   const ordered = flattenLessonOrder(sections, lessons);
   const nextLesson =
     ordered.find((l) => {
@@ -32,7 +39,13 @@ export default async function CourseLandingPage({
     }) ?? ordered[0];
 
   return (
-    <CourseShell course={course} sections={sections} lessons={lessons} progress={progress}>
+    <CourseShell
+      course={course}
+      sections={sections}
+      lessons={lessons}
+      progress={progress}
+      theme={theme}
+    >
       <h1 className="mb-2 text-2xl font-semibold">{course.title}</h1>
       <p className="mb-6 text-sm text-black/60 dark:text-white/60">
         {ordered.length} lesson{ordered.length === 1 ? "" : "s"}
@@ -41,6 +54,7 @@ export default async function CourseLandingPage({
         <Link
           href={`/c/${slug}/lessons/${nextLesson.id}`}
           className="inline-block rounded bg-foreground px-5 py-2.5 text-background"
+          style={theme ? { backgroundColor: theme.colors.primary, color: theme.colors.background } : undefined}
         >
           {Object.keys(progress).length > 0 ? "Continue" : "Start course"}
         </Link>

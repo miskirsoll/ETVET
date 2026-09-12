@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Theme "block entrance animations" toggle, applied per-block in the
+   public course renderer. */
+@keyframes etvet-block-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.etvet-animate-in {
+  animation: etvet-block-in 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etvet-animate-in {
+    animation: none;
+  }
+}
