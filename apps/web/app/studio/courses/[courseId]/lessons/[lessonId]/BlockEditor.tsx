@@ -28,14 +28,23 @@ const BLOCK_TYPES: { type: BlockType; label: string }[] = [
   { type: "image", label: "Image" },
   { type: "video", label: "Video" },
   { type: "divider", label: "Divider" },
+  { type: "continue", label: "Continue" },
+  { type: "button", label: "Button" },
 ];
+
+export interface CourseLessonRef {
+  id: string;
+  title: string;
+}
 
 export function BlockEditor({
   lessonId,
   initialBlocks,
+  courseLessons,
 }: {
   lessonId: string;
   initialBlocks: Block[];
+  courseLessons: CourseLessonRef[];
 }) {
   const [blocks, setBlocks] = useState(
     [...initialBlocks].sort((a, b) => a.order - b.order)
@@ -76,6 +85,7 @@ export function BlockEditor({
               <SortableBlock
                 key={block.id}
                 block={block}
+                courseLessons={courseLessons}
                 onChange={(content) => updateBlock(block.id, content)}
                 onDelete={() => removeBlock(block.id)}
               />
@@ -107,10 +117,12 @@ export function BlockEditor({
 
 function SortableBlock({
   block,
+  courseLessons,
   onChange,
   onDelete,
 }: {
   block: Block;
+  courseLessons: CourseLessonRef[];
   onChange: (content: Block["content"]) => void;
   onDelete: () => void;
 }) {
@@ -132,16 +144,18 @@ function SortableBlock({
           Delete
         </button>
       </div>
-      <BlockFields block={block} onChange={onChange} />
+      <BlockFields block={block} courseLessons={courseLessons} onChange={onChange} />
     </li>
   );
 }
 
 function BlockFields({
   block,
+  courseLessons,
   onChange,
 }: {
   block: Block;
+  courseLessons: CourseLessonRef[];
   onChange: (content: Block["content"]) => void;
 }) {
   const inputClass =
@@ -219,6 +233,64 @@ function BlockFields({
       );
     case "divider":
       return <hr className="border-black/10 dark:border-white/10" />;
+    case "continue":
+      return (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-black/50 dark:text-white/50">
+            Learners won&apos;t see anything below this block until they click it.
+          </p>
+          <input
+            className={inputClass}
+            placeholder="Button label"
+            defaultValue={String(block.content.label ?? "Continue")}
+            onBlur={(e) => onChange({ ...block.content, label: e.target.value })}
+          />
+        </div>
+      );
+    case "button": {
+      const targetType = String(block.content.target_type ?? "next");
+      return (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Button label"
+            defaultValue={String(block.content.label ?? "Next")}
+            onBlur={(e) => onChange({ ...block.content, label: e.target.value })}
+          />
+          <select
+            className={inputClass}
+            value={targetType}
+            onChange={(e) => onChange({ ...block.content, target_type: e.target.value })}
+          >
+            <option value="next">Go to next lesson</option>
+            <option value="lesson">Jump to a specific lesson</option>
+            <option value="url">Open a URL</option>
+          </select>
+          {targetType === "lesson" && (
+            <select
+              className={inputClass}
+              value={String(block.content.lesson_id ?? "")}
+              onChange={(e) => onChange({ ...block.content, lesson_id: e.target.value })}
+            >
+              <option value="">Choose a lesson…</option>
+              {courseLessons.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ))}
+            </select>
+          )}
+          {targetType === "url" && (
+            <input
+              className={inputClass}
+              placeholder="https://…"
+              defaultValue={String(block.content.url ?? "")}
+              onBlur={(e) => onChange({ ...block.content, url: e.target.value })}
+            />
+          )}
+        </div>
+      );
+    }
     default:
       return null;
   }

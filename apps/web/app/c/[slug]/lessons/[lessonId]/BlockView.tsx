@@ -1,18 +1,52 @@
+"use client";
+
+import { useState } from "react";
 import type { Block } from "@/lib/types/db";
 
-export function BlockView({ blocks }: { blocks: Block[] }) {
+/** Splits into runs that end right after (and include) each 'continue' block. */
+function splitIntoSegments(blocks: Block[]): Block[][] {
+  const segments: Block[][] = [[]];
+  for (const block of blocks) {
+    segments[segments.length - 1].push(block);
+    if (block.type === "continue") segments.push([]);
+  }
+  return segments.filter((s) => s.length > 0);
+}
+
+export function BlockView({
+  blocks,
+  slug,
+  nextHref,
+}: {
+  blocks: Block[];
+  slug: string;
+  nextHref: string | null;
+}) {
+  const segments = splitIntoSegments([...blocks].sort((a, b) => a.order - b.order));
+  const [revealedCount, setRevealedCount] = useState(1);
+  const visible = segments.slice(0, revealedCount).flatMap((segment, segmentIndex) =>
+    segment.map((block) => ({ block, segmentIndex }))
+  );
+
   return (
     <div className="flex flex-col gap-6">
-      {[...blocks]
-        .sort((a, b) => a.order - b.order)
-        .map((block) => (
-          <div key={block.id}>{renderBlock(block)}</div>
-        ))}
+      {visible.map(({ block, segmentIndex }) => (
+        <div key={block.id}>
+          {renderBlock(block, slug, nextHref, () =>
+            setRevealedCount((c) => Math.max(c, segmentIndex + 2))
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
-function renderBlock(block: Block) {
+function renderBlock(
+  block: Block,
+  slug: string,
+  nextHref: string | null,
+  onContinue: () => void
+) {
   switch (block.type) {
     case "heading":
       return <h2 className="text-xl font-semibold">{String(block.content.text ?? "")}</h2>;
@@ -65,6 +99,37 @@ function renderBlock(block: Block) {
       ) : null;
     case "divider":
       return <hr className="border-black/10 dark:border-white/10" />;
+    case "continue":
+      return (
+        <button
+          onClick={onContinue}
+          className="rounded bg-foreground px-5 py-2.5 text-sm text-background"
+        >
+          {String(block.content.label ?? "Continue")}
+        </button>
+      );
+    case "button": {
+      const label = String(block.content.label ?? "Next");
+      const targetType = String(block.content.target_type ?? "next");
+      let href: string | null = null;
+      if (targetType === "next") href = nextHref;
+      else if (targetType === "lesson" && block.content.lesson_id)
+        href = `/c/${slug}/lessons/${block.content.lesson_id}`;
+      else if (targetType === "url" && block.content.url) href = String(block.content.url);
+
+      if (!href) return null;
+      const isExternal = targetType === "url";
+      return (
+        <a
+          href={href}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noreferrer" : undefined}
+          className="inline-block rounded border border-black/15 px-5 py-2.5 text-sm dark:border-white/20"
+        >
+          {label}
+        </a>
+      );
+    }
     default:
       return null;
   }

@@ -241,6 +241,8 @@ const DEFAULT_BLOCK_CONTENT: Record<BlockType, Block["content"]> = {
   image: { url: "", alt: "" },
   video: { url: "" },
   divider: {},
+  continue: { label: "Continue" },
+  button: { label: "Next", target_type: "next" },
 };
 
 export async function createBlock(lessonId: string, type: BlockType): Promise<Block | null> {

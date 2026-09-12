@@ -94,7 +94,9 @@ export type BlockType =
   | "list"
   | "image"
   | "video"
-  | "divider";
+  | "divider"
+  | "continue"
+  | "button";
 
 export interface Block {
   id: string;

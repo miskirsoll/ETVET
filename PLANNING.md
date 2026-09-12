@@ -156,9 +156,9 @@ Step 1 (Foundation) and step 2 (Course structure) are scaffolded:
   out), `getSession()`/`requireTier()`/`requireRole()` guards, a course
   dashboard, a drag-and-drop outline editor (sections/lessons), a Block
   Lesson editor (heading, text, statement, quote, list, image, video,
-  divider blocks — covers and exceeds the "at least text/image/video/list"
-  bar from the build order), and an `/upgrade` page that doubles as the
-  manual tier-flip test tool until Stripe is wired.
+  divider, continue, and button blocks — covers and exceeds the "at least
+  text/image/video/list" bar from the build order), and an `/upgrade` page
+  that doubles as the manual tier-flip test tool until Stripe is wired.
 - `supabase/migrations/` — `organizations`/`users`/`subscription_tier`,
   the course structure tables, RLS policies scoped by `org_id`, and a
   sign-up trigger that gives every new user their own FREE-tier
@@ -300,18 +300,29 @@ Foundation migration that this work surfaced and fixed.
 - ~~Quiz-taking flow from §7.1 plugs in here.~~ Built, graded server-side.
 - Still remaining: the theme isn't applied to this renderer yet (§7.2 not
   built), and the desktop/tablet/mobile author-facing preview frame
-  toggle. Continue blocks (progressive reveal) still don't exist as a
-  block type at all — see §7.4.1 below, a gap in the *original* block
-  editor noticed while building this.
+  toggle.
 
-#### 7.4.1 Known gap: Continue and Button blocks were never built — S
+#### 7.4.1 Continue and Button blocks — **done**
 
-The spec explicitly calls out a **Continue block** (hides further content
-until the learner interacts with it) and a **Button block** (custom
+~~The spec explicitly calls out a Continue block (hides further content
+until the learner interacts with it) and a Button block (custom
 navigation) as required structural block types, alongside Divider. Only
-Divider was built in the original Block Lesson editor pass. Worth picking
-up alongside whatever touches the block editor next, since the public
-renderer now exists to make a Continue block's behavior actually visible.
+Divider was built in the original Block Lesson editor pass.~~ Fixed:
+
+- Both added to the Block Lesson editor's add-block menu and config forms
+  — Continue takes a button label; Button takes a label plus a target
+  (next lesson, a specific lesson picked from the rest of the course, or
+  an arbitrary URL).
+- The public renderer's `BlockView` actually implements the gating: blocks
+  are split into segments at each Continue block, and only the segments
+  up to the last one the learner has clicked are rendered — not just
+  stored config with no runtime behavior. Verified the edge cases don't
+  crash (no Continue block at all, one as the very last block, an empty
+  lesson).
+- This is real, if basic, branching: a Button block targeting a specific
+  lesson lets an author route learners out of strict top-to-bottom order,
+  which is what the spec's "custom navigation/branching" line asked for,
+  short of a full scenario/branching editor (still out of scope).
 
 ### 7.5 SCORM export for Moodle (build order step 5) — XL
 

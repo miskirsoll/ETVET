@@ -25,6 +25,17 @@ export default async function LessonEditorPage({
       ? await supabase.from("blocks").select("*").eq("lesson_id", lessonId).order("order")
       : { data: [] as Block[] };
 
+  // For the Button block's "jump to lesson" picker -- every lesson in the
+  // same course, regardless of section.
+  const { data: courseSections } = await supabase
+    .from("sections")
+    .select("id")
+    .eq("course_id", courseId);
+  const sectionIds = (courseSections ?? []).map((s) => s.id);
+  const { data: courseLessons } = sectionIds.length
+    ? await supabase.from("lessons").select("id, title").in("section_id", sectionIds).order("order")
+    : { data: [] as { id: string; title: string }[] };
+
   const { data: questions } =
     typedLesson.type === "QUIZ"
       ? await supabase.from("questions").select("*").eq("lesson_id", lessonId).order("order")
@@ -43,7 +54,11 @@ export default async function LessonEditorPage({
       <h1 className="text-2xl font-semibold">{typedLesson.title}</h1>
 
       {typedLesson.type === "BLOCK" ? (
-        <BlockEditor lessonId={lessonId} initialBlocks={(blocks ?? []) as Block[]} />
+        <BlockEditor
+          lessonId={lessonId}
+          initialBlocks={(blocks ?? []) as Block[]}
+          courseLessons={(courseLessons ?? []).filter((l) => l.id !== lessonId)}
+        />
       ) : (
         <QuizEditor
           lessonId={lessonId}

@@ -69,7 +69,7 @@ export default async function LessonPage({
         activeLessonId={lessonId}
       >
         <h1 className="mb-6 text-2xl font-semibold">{lesson.title}</h1>
-        <BlockView blocks={(blocks ?? []) as Block[]} />
+        <BlockView blocks={(blocks ?? []) as Block[]} slug={slug} nextHref={nextHref} />
         <div className="mt-8">
           <CompleteButton courseId={course.id} lessonId={lessonId} nextHref={nextHref} />
         </div>
