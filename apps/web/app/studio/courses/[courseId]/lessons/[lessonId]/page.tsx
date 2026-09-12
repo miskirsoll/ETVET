@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
-import type { Block, Lesson } from "@/lib/types/db";
+import type { Block, Lesson, Question, QuestionChoice } from "@/lib/types/db";
 import { BlockEditor } from "./BlockEditor";
+import { QuizEditor } from "./QuizEditor";
 
 export default async function LessonEditorPage({
   params,
@@ -24,6 +25,16 @@ export default async function LessonEditorPage({
       ? await supabase.from("blocks").select("*").eq("lesson_id", lessonId).order("order")
       : { data: [] as Block[] };
 
+  const { data: questions } =
+    typedLesson.type === "QUIZ"
+      ? await supabase.from("questions").select("*").eq("lesson_id", lessonId).order("order")
+      : { data: [] as Question[] };
+
+  const questionIds = (questions ?? []).map((q) => q.id);
+  const { data: choices } = questionIds.length
+    ? await supabase.from("question_choices").select("*").in("question_id", questionIds).order("order")
+    : { data: [] as QuestionChoice[] };
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <Link href={`/studio/courses/${courseId}`} className="text-sm hover:underline">
@@ -34,11 +45,12 @@ export default async function LessonEditorPage({
       {typedLesson.type === "BLOCK" ? (
         <BlockEditor lessonId={lessonId} initialBlocks={(blocks ?? []) as Block[]} />
       ) : (
-        <p className="rounded border border-black/10 p-6 text-sm text-black/60 dark:border-white/10 dark:text-white/60">
-          Quiz Lesson editor is coming in the next milestone (multiple choice + true/false
-          first, per the build plan). This lesson is stored as a Quiz Lesson so the outline
-          structure is already in place.
-        </p>
+        <QuizEditor
+          lessonId={lessonId}
+          lesson={typedLesson}
+          initialQuestions={(questions ?? []) as Question[]}
+          initialChoices={(choices ?? []) as QuestionChoice[]}
+        />
       )}
     </div>
   );

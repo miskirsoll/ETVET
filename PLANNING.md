@@ -167,11 +167,24 @@ Step 1 (Foundation) and step 2 (Course structure) are scaffolded:
   visible, disabled, "Upgrade to MAXPRO" CTA) ahead of Live Sessions itself
   being built, so the gate is provably wired before step 6.
 
-Not yet built: Quiz Lesson content editing (step 3), theming/publish/SCORM
-(steps 4–5), and everything in Module B/C (steps 6–9). Quiz lessons can be
-created structurally (they show a placeholder in the editor) since the
-outline needs both lesson types to be a real test of the drag-and-drop
-reordering.
+Step 3 (Quiz Lesson editor) is also now built: `questions`/`question_choices`
+tables (RLS-scoped the same way as the rest of the course structure),
+multiple choice + multiple response + true/false question types (fill-blank
+and matching are schema-ready via `question_choices`/`config` but have no
+editor UI yet, per the plan's "MC + T/F first" ordering), per-question
+options with a correct-answer toggle, drag-to-reorder questions, and a
+per-lesson settings panel (pass threshold, optional timer, randomize +
+draw-a-subset). Verified against a real Postgres instance: the schema
+migrates cleanly, the pass-threshold check constraint rejects out-of-range
+values, and RLS isolates one org's questions from another's, the same way
+it already did for courses.
+
+Not yet built: theming/publish/SCORM (steps 4–5) and everything in Module
+B/C (steps 6–9) — see §7 below for the detailed breakdown. Note that
+grading/scoring logic has nothing to run against yet, since there's no
+learner-facing quiz-taking runtime until §7.4 (the public course renderer)
+exists; the quiz editor built here is author-side only, same as the Block
+Lesson editor was at this stage.
 
 ## 7. Remaining work — detailed
 
@@ -184,19 +197,21 @@ far is the authoring side only. Preview, publish, progress tracking, SCORM
 export, and Bridge async mode all depend on that renderer existing, so it's
 folded into §7.4 rather than treated as implicit.
 
-### 7.1 Quiz Lesson editor (build order step 3) — L
+### 7.1 Quiz Lesson editor (build order step 3) — L — **done** (editor side)
 
-- Schema: `question_banks`, `questions`, `question_choices` (referenced in
-  the spec's data model, not yet migrated).
-- Question types: multiple choice, multiple response, true/false,
-  fill-in-the-blank, matching (drag-to-pair) — MVP order per the plan is
-  multiple choice + true/false first, the rest after.
-- Per-choice feedback text, pass/fail threshold, retry limits, scored vs.
-  practice (ungraded) mode, optional per-quiz timer.
-- Randomized draw from a question bank per attempt.
-- A quiz-taking runtime (grading logic + score computation) — this is
-  separate from the editor and is only exercised once §7.4's public
-  renderer exists.
+- ~~Schema: `questions`, `question_choices` (a lesson's own question pool
+  doubles as its "bank" — a separate reusable bank table shared across
+  lessons is deferred).~~ Built.
+- ~~Question types: multiple choice, multiple response, true/false.~~ Built.
+  Fill-in-the-blank and matching (drag-to-pair) remain — schema has room
+  (`question_choices` + `questions.config` jsonb) but no editor UI yet.
+- ~~Pass/fail threshold, optional per-quiz timer, randomize + draw-a-subset
+  per attempt.~~ Built. Retry limits and scored-vs-practice mode remain.
+- ~~Per-choice correct/incorrect.~~ Built. Per-choice custom feedback text
+  has a `feedback` column but no editor field yet.
+- Still remaining: a quiz-taking runtime (grading logic + score
+  computation) — that's a learner-facing concern and waits on §7.4's
+  public renderer, same reasoning as the Block Lesson editor.
 
 ### 7.2 Theming & branding — M
 

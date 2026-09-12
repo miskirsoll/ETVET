@@ -55,6 +55,35 @@ export interface Lesson {
   title: string;
   icon: string | null;
   order: number;
+  pass_threshold: number;
+  randomize_questions: boolean;
+  draw_count: number | null;
+  time_limit_seconds: number | null;
+}
+
+export type QuestionType =
+  | "multiple_choice"
+  | "multiple_response"
+  | "true_false"
+  | "fill_blank"
+  | "matching";
+
+export interface Question {
+  id: string;
+  lesson_id: string;
+  type: QuestionType;
+  order: number;
+  prompt: string;
+  config: Record<string, unknown>;
+}
+
+export interface QuestionChoice {
+  id: string;
+  question_id: string;
+  order: number;
+  text: string;
+  is_correct: boolean;
+  feedback: string | null;
 }
 
 export type BlockType =
