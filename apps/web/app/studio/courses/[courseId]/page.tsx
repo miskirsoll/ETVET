@@ -3,6 +3,7 @@ import { requireTierOrRedirect } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import type { Course, Lesson, Section } from "@/lib/types/db";
 import { OutlineEditor } from "./OutlineEditor";
+import { PublishPanel } from "./PublishPanel";
 
 export default async function CourseOutlinePage({
   params,
@@ -34,6 +35,7 @@ export default async function CourseOutlinePage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">{(course as Course).title}</h1>
+      <PublishPanel course={course as Course} />
       <OutlineEditor
         courseId={courseId}
         initialSections={(sections ?? []) as Section[]}

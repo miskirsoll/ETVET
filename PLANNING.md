@@ -186,6 +186,51 @@ learner-facing quiz-taking runtime until §7.4 (the public course renderer)
 exists; the quiz editor built here is author-side only, same as the Block
 Lesson editor was at this stage.
 
+**§7.4 (public course renderer, preview/publish/progress) is now built**,
+ahead of theming/SCORM per the suggested sequencing in §8:
+
+- Publish/unpublish from the course outline page (`PublishPanel`):
+  generates a unique `publish_slug` on first publish, optional
+  `publish_password`, keeps the same slug across unpublish/republish.
+- `/c/[slug]` — public, unauthenticated: password gate when set, a course
+  landing page linking to the next incomplete lesson, and
+  `/c/[slug]/lessons/[lessonId]` rendering either the Block Lesson (all 8
+  block types, read-only) or the Quiz Lesson (interactive, client-side
+  randomize/draw-a-subset per §7.1's settings) for that lesson.
+- `nav_settings` is enforced both ways: the sidebar (`CourseShell`) hides
+  locked lessons under sequential navigation, and the lesson page
+  independently redirects a direct deep link to a locked lesson back to
+  the right one — the sidebar's own lock/hide logic is a UI convenience,
+  not the actual boundary.
+- Progress tracking against `learner_progress`: a Block Lesson writes
+  `completed` on a "Complete & continue" click; a Quiz Lesson is graded
+  **server-side** against the authoritative `is_correct` flags (the client
+  only ever submits which choice ids it picked, never a score or a
+  pass/fail verdict) and writes `passed`/`failed` + score against
+  `pass_threshold`. Anonymous learners get a random token in an httpOnly
+  cookie, minted lazily by the first Server Action that needs one.
+- **Two real RLS gaps found and fixed while building and testing this**
+  (both pre-dated this milestone, in the original Foundation migration —
+  see migrations `0004`–`0006` and their own commit messages for the full
+  detail): every table was missing the Data API grants entirely (RLS
+  restricts a grant, it doesn't imply one — nothing was reachable through
+  PostgREST at all before `0004`), and the original insert/update policies
+  on `learner_progress` keyed on `user_id is null`, which passed for *any*
+  anonymous row rather than the caller's own, since `anon_token` isn't a
+  verifiable JWT claim the way `auth.uid()` is. Both are now fixed with
+  `SECURITY DEFINER` RPCs (`get_learner_progress`,
+  `submit_learner_progress`) that filter by the exact token argument
+  inside their own SQL, closing the gap a client-side query filter alone
+  can't close. All of this was verified against a real (temporary, local)
+  Postgres instance, not assumed from reading the SQL.
+- Deliberately deferred from this pass: the desktop/tablet/mobile preview
+  frame toggle inside `/studio` (the renderer itself is responsive by
+  default — Tailwind, mobile-first — just no author-facing frame-switcher
+  UI yet), and tying progress to an authenticated **learner** account
+  (there's no learner-signup path distinct from the org-owner signup flow
+  yet — anonymous-token tracking is the only path for now, which the spec
+  allows: "account optional... recommended but not required").
+
 ## 7. Remaining work — detailed
 
 Everything below is what's left to reach the spec's "fully functional"
@@ -234,31 +279,39 @@ folded into §7.4 rather than treated as implicit.
 - Extend RLS-equivalent access rules to Storage policies (bucket policies
   mirroring the `org_id` scoping already enforced on the tables).
 
-### 7.4 Preview, publish, and the public learner experience — XL
+### 7.4 Preview, publish, and the public learner experience — XL — **done** (core)
 
-The biggest single gap. Needed by theming, SCORM, progress tracking, and
-Bridge async mode alike, so it's worth sequencing right after quizzes:
+The biggest single gap; built ahead of theming/SCORM per §8. See §6 above
+for the full rundown, including two real RLS gaps in the *original*
+Foundation migration that this work surfaced and fixed.
 
-- A new, unauthenticated route tree that renders a **published** course
-  for learners (e.g. `/c/[slug]`, optionally gated by `publish_password`,
-  both already columns on `courses`) — reads the same
-  course/section/lesson/block data but through the public RLS policies
-  already in place, with no `/studio` chrome.
-- Renders every block type built so far, applies the course's theme, and
-  respects `nav_settings` (sidebar visible/hidden/off, free vs.
-  must-complete-in-order navigation, in-course search).
-- Responsive preview mode inside the authoring UI: desktop/tablet/mobile
-  frame toggle over that same renderer, pre-publish.
-- "Publish" action on the course dashboard: flips `status` to
-  `PUBLISHED`, generates/edits the `publish_slug`, sets/clears
-  `publish_password`.
-- Learner progress tracking against `learner_progress` (migrated, unused
-  so far): per-lesson completion, quiz score, time spent, tied to an
-  authenticated learner or an anonymous token cookie. Continue blocks
-  (progressive reveal) become meaningful here — currently just stored
-  config with no runtime behavior.
-- Quiz-taking flow from §7.1 plugs in here (this is where a learner
-  actually takes a quiz and a score gets written).
+- ~~Unauthenticated route rendering a published course (`/c/[slug]`,
+  password gate via `publish_password`).~~ Built.
+- ~~Renders every block type built so far; respects `nav_settings`
+  (sidebar visible/hidden/off, free vs. sequential), enforced both in the
+  sidebar and independently on direct lesson-URL access.~~ Built.
+  In-course search (also part of `nav_settings` in the spec) is not built.
+- ~~"Publish" action: flips `status`, generates/persists `publish_slug`,
+  sets/clears `publish_password`.~~ Built, from the course outline page.
+- ~~Learner progress tracking: per-lesson completion, quiz score, time
+  spent, anonymous-token based.~~ Built. Tying progress to an
+  *authenticated* learner account is not — there's no learner-signup flow
+  distinct from the org-owner signup yet (§7.12).
+- ~~Quiz-taking flow from §7.1 plugs in here.~~ Built, graded server-side.
+- Still remaining: the theme isn't applied to this renderer yet (§7.2 not
+  built), and the desktop/tablet/mobile author-facing preview frame
+  toggle. Continue blocks (progressive reveal) still don't exist as a
+  block type at all — see §7.4.1 below, a gap in the *original* block
+  editor noticed while building this.
+
+#### 7.4.1 Known gap: Continue and Button blocks were never built — S
+
+The spec explicitly calls out a **Continue block** (hides further content
+until the learner interacts with it) and a **Button block** (custom
+navigation) as required structural block types, alongside Divider. Only
+Divider was built in the original Block Lesson editor pass. Worth picking
+up alongside whatever touches the block editor next, since the public
+renderer now exists to make a Continue block's behavior actually visible.
 
 ### 7.5 SCORM export for Moodle (build order step 5) — XL
 

@@ -111,6 +111,58 @@ export async function deleteCourse(formData: FormData) {
   revalidatePath("/studio");
 }
 
+function slugify(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "course"
+  );
+}
+
+export async function publishCourse(courseId: string, password: string) {
+  await requireTier("PRO");
+  const supabase = await createClient();
+  const { data: course } = await supabase
+    .from("courses")
+    .select("title, publish_slug")
+    .eq("id", courseId)
+    .single();
+  if (!course) return;
+
+  let slug = course.publish_slug;
+  if (!slug) {
+    const base = slugify(course.title);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 7)}`;
+      const { data: existing } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("publish_slug", candidate)
+        .maybeSingle();
+      if (!existing) {
+        slug = candidate;
+        break;
+      }
+    }
+    if (!slug) slug = `${base}-${Date.now()}`;
+  }
+
+  await supabase
+    .from("courses")
+    .update({ status: "PUBLISHED", publish_slug: slug, publish_password: password || null })
+    .eq("id", courseId);
+  revalidatePath(`/studio/courses/${courseId}`);
+}
+
+export async function unpublishCourse(courseId: string) {
+  await requireTier("PRO");
+  const supabase = await createClient();
+  await supabase.from("courses").update({ status: "DRAFT" }).eq("id", courseId);
+  revalidatePath(`/studio/courses/${courseId}`);
+}
+
 // ---------- Sections ----------
 
 export async function createSection(courseId: string, title: string) {

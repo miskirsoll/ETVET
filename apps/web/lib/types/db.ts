@@ -104,3 +104,17 @@ export interface Block {
   config: Record<string, unknown>;
   content: Record<string, unknown>;
 }
+
+export type ProgressStatus = "in_progress" | "completed" | "passed" | "failed";
+
+export interface LearnerProgress {
+  id: string;
+  course_id: string;
+  lesson_id: string | null;
+  user_id: string | null;
+  anon_token: string | null;
+  status: ProgressStatus;
+  score: number | null;
+  time_spent_seconds: number;
+  updated_at: string;
+}
