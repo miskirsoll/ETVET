@@ -280,13 +280,18 @@ function SortableQuestion({
       </div>
 
       <textarea
+        id={`question-prompt-${question.id}`}
         className="mb-3 w-full rounded border border-black/10 px-3 py-2 text-sm dark:border-white/20 bg-transparent"
         rows={2}
         defaultValue={question.prompt}
         onBlur={(e) => updateQuestionPrompt(question.id, e.target.value)}
       />
 
-      <ul className="flex flex-col gap-2">
+      <ul
+        role="group"
+        aria-labelledby={`question-prompt-${question.id}`}
+        className="flex flex-col gap-2"
+      >
         {choices.map((choice) => (
           <li key={choice.id} className="flex items-center gap-2 text-sm">
             <input

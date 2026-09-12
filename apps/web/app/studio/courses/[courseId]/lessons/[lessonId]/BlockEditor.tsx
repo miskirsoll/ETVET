@@ -333,7 +333,8 @@ function BlockFields({
           }
         />
       );
-    case "image":
+    case "image": {
+      const decorative = Boolean(block.content.decorative);
       return (
         <div className="flex flex-col gap-2">
           <input
@@ -349,14 +350,32 @@ function BlockFields({
             label="Upload image"
             onUploaded={(url) => onChange({ ...block.content, url })}
           />
-          <input
-            className={inputClass}
-            placeholder="Alt text"
-            defaultValue={String(block.content.alt ?? "")}
-            onBlur={(e) => onChange({ ...block.content, alt: e.target.value })}
-          />
+          {!decorative && (
+            <input
+              className={inputClass}
+              placeholder="Alt text"
+              defaultValue={String(block.content.alt ?? "")}
+              onBlur={(e) => onChange({ ...block.content, alt: e.target.value })}
+            />
+          )}
+          <label className="flex items-center gap-2 text-xs text-black/60 dark:text-white/60">
+            <input
+              type="checkbox"
+              checked={decorative}
+              onChange={(e) =>
+                onChange({
+                  ...block.content,
+                  decorative: e.target.checked,
+                  alt: e.target.checked ? "" : block.content.alt,
+                })
+              }
+            />
+            Decorative image (purely visual — screen readers will skip it instead of
+            reading empty/missing alt text)
+          </label>
         </div>
       );
+    }
     case "video":
       return (
         <div className="flex flex-col gap-2">
