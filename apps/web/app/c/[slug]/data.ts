@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Course, Lesson, LearnerProgress, Section, Theme } from "@/lib/types/db";
 import type { LearnerKey } from "@/lib/learner/session";
 
+export { flattenLessonOrder } from "@/lib/course/order";
+
 export async function getCourseTheme(themeId: string | null): Promise<Theme | null> {
   if (!themeId) return null;
   const supabase = await createClient();
@@ -37,23 +39,6 @@ export async function getCourseOutline(
     : { data: [] as Lesson[] };
 
   return { sections: (sections ?? []) as Section[], lessons: (lessons ?? []) as Lesson[] };
-}
-
-/** Flattens sections+lessons into reading order, for prev/next + sequential locking. */
-export function flattenLessonOrder(sections: Section[], lessons: Lesson[]): Lesson[] {
-  const bySection = new Map<string, Lesson[]>();
-  for (const l of lessons) {
-    const list = bySection.get(l.section_id) ?? [];
-    list.push(l);
-    bySection.set(l.section_id, list);
-  }
-  for (const list of bySection.values()) list.sort((a, b) => a.order - b.order);
-
-  const ordered: Lesson[] = [];
-  for (const section of [...sections].sort((a, b) => a.order - b.order)) {
-    ordered.push(...(bySection.get(section.id) ?? []));
-  }
-  return ordered;
 }
 
 /**

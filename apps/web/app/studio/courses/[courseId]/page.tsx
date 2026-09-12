@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
+import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { createClient } from "@/lib/supabase/server";
-import type { Course, Lesson, Section, Theme } from "@/lib/types/db";
+import type { Lesson, Section, Theme } from "@/lib/types/db";
 import { OutlineEditor } from "./OutlineEditor";
 import { PublishPanel } from "./PublishPanel";
 import { ThemeSelector } from "./ThemeSelector";
@@ -15,14 +16,8 @@ export default async function CourseOutlinePage({
 }) {
   const session = await requireTierOrRedirect("PRO");
   const { courseId } = await params;
+  const course = await requireCourseAccess(courseId, session);
   const supabase = await createClient();
-
-  const { data: course } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("id", courseId)
-    .single();
-  if (!course) notFound();
 
   const { data: themes } = await supabase
     .from("themes")
@@ -43,19 +38,27 @@ export default async function CourseOutlinePage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{(course as Course).title}</h1>
+      <h1 className="text-2xl font-semibold">{course.title}</h1>
       <CourseCoverField
         courseId={courseId}
         orgId={session.org.id}
-        initialUrl={(course as Course).cover_image_url}
+        initialUrl={course.cover_image_url}
       />
       <ThemeSelector
         courseId={courseId}
-        currentThemeId={(course as Course).theme_id}
+        currentThemeId={course.theme_id}
         themes={(themes ?? []) as Theme[]}
       />
-      <PublishPanel course={course as Course} />
-      <ScormExportButton courseId={courseId} />
+      <PublishPanel course={course} />
+      <div className="flex gap-3">
+        <ScormExportButton courseId={courseId} />
+        <Link
+          href={`/studio/courses/${courseId}/analytics`}
+          className="inline-block rounded border border-black/15 px-4 py-2 text-sm dark:border-white/20"
+        >
+          Analytics {session.org.subscription_tier !== "MAXPRO" && "(MAXPRO)"}
+        </Link>
+      </div>
       <OutlineEditor
         courseId={courseId}
         initialSections={(sections ?? []) as Section[]}

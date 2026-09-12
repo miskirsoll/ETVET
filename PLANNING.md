@@ -569,13 +569,60 @@ slice; a few things explicitly deferred to §7.7/later.
   Bridge doesn't depend on Realtime anyway (async mode is submit-and-refetch,
   not subscribed).
 
-### 7.9 Unified analytics dashboard (build order step 9) — M
+### 7.9 Unified analytics dashboard (build order step 9) — M — **built**
 
-- Per course: completion rate, average quiz score, aggregated results
-  from any embedded interactive blocks, in one view (MAXPRO only).
-- Depends on real data existing in `learner_progress` (§7.4), quiz
-  attempts (§7.1), and `live_responses`/interactive blocks (§7.6/§7.8) —
-  sequenced last among the feature work for that reason.
+- ~~Per course: completion rate, average quiz score, aggregated results
+  from any embedded interactive blocks, in one view (MAXPRO only).~~
+  Built at `/studio/courses/[courseId]/analytics`, linked from the course
+  outline page. Three stat cards (learners started, completion rate,
+  average quiz score) computed by pure functions in
+  `lib/analytics/compute.ts`, plus a per-interactive-block section
+  reusing `lib/live/aggregate.ts` (§7.6) to render each linked session's
+  slides: bar chart for polls, weighted tag list for word clouds, a list
+  for open-ended text, and a response/correct count for quiz slides.
+  `qa_board` slides are summarized from `qa_questions` (sorted by
+  upvotes), not from `live_responses` — Q&A answers are stored per-session
+  there, not per-slide, unlike every other slide type (see the migration
+  0009 comment on that table).
+- "Completion rate" = fraction of learners who ever touched the course
+  that reached `completed`/`passed` on its **last** lesson (in outline
+  order) — not "completed every lesson individually," since sequential
+  navigation (§7.4) already implies the latter once the former is true.
+  "Average quiz score" = mean of `learner_progress.score` across all
+  `QUIZ`-type lessons in the course, across all learners. Both return
+  `null` (rendered as "—") rather than `0` when there's no data yet, to
+  distinguish "0% completion" from "nobody has started."
+- **A real cross-tenant read gap was found and fixed while building this**:
+  every studio page keyed by `courseId` (`courses/[courseId]`,
+  `.../lessons/[lessonId]`, and this new analytics page) fetched its
+  course/lesson by id and relied on RLS alone for tenant isolation — but
+  RLS's "anyone reads published courses/sections/lessons/blocks" policies
+  (needed for the public `/c/[slug]` renderer) aren't scoped to the owning
+  org the way the write policies are, and `requireTierOrRedirect` only
+  checks the *caller's own* org's tier, never that they own *this*
+  course. Net effect: once a course was published, any other org's
+  authenticated user could open its studio pages read-only (including,
+  for the new analytics page, its linked live session's poll/word-cloud/
+  Q&A data — already public-by-design per §7.8 — though critically
+  `learner_progress` itself stayed correctly isolated throughout, since
+  it has no public-read policy). Fixed with a new
+  `lib/auth/requireCourseAccess.ts` helper (fetches the course, 404s
+  unless `course.org_id === session.org.id`) applied to all three pages;
+  the lesson editor additionally now confirms the lesson's own section
+  actually belongs to the URL's `courseId` rather than trusting it, since
+  `lessonId` alone is just as reachable across orgs via the same public-
+  read RLS policies. Verified end-to-end against a real local Postgres:
+  confirmed a same-org (non-owner) teammate can read
+  `learner_progress`/`interactive_blocks`/`live_sessions`/`live_slides`/
+  `live_responses` for the course, and separately confirmed the exact row
+  RLS was letting a *different* org's session read (proving the fix's
+  `course.org_id !== session.org.id` check actually fires against real
+  data, not just reasoned about). `lib/analytics/compute.ts`'s pure
+  functions were also executed directly (via `tsx`, not re-implemented in
+  the test) against edge cases: no learners yet, a learner who stalled
+  before the last lesson, a `failed` status on the last lesson (must not
+  count as a finisher), and in-progress quiz attempts with a null score
+  (must not skew the average).
 
 ### 7.10 AI features (build order step 10) — L
 

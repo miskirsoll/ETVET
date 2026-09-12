@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTierOrRedirect } from "@/lib/auth/requireTier";
+import { requireCourseAccess } from "@/lib/auth/requireCourseAccess";
 import { createClient } from "@/lib/supabase/server";
 import type { Block, InteractiveBlock, Lesson, LiveSession, Question, QuestionChoice } from "@/lib/types/db";
 import { BlockEditor } from "./BlockEditor";
@@ -13,12 +14,25 @@ export default async function LessonEditorPage({
 }) {
   const session = await requireTierOrRedirect("PRO");
   const { courseId, lessonId } = await params;
+  await requireCourseAccess(courseId, session);
   const supabase = await createClient();
 
   const { data: lesson } = await supabase.from("lessons").select("*").eq("id", lessonId).single();
   if (!lesson) notFound();
 
   const typedLesson = lesson as Lesson;
+
+  // requireCourseAccess above only proves courseId itself belongs to this
+  // org -- lessonId is a separate RLS-readable resource (also reachable
+  // via "anyone reads lessons of published courses"), so confirm it's
+  // actually a lesson of *this* course rather than trusting the URL.
+  const { data: lessonSection } = await supabase
+    .from("sections")
+    .select("id")
+    .eq("id", typedLesson.section_id)
+    .eq("course_id", courseId)
+    .maybeSingle();
+  if (!lessonSection) notFound();
 
   const { data: blocks } =
     typedLesson.type === "BLOCK"
