@@ -648,7 +648,7 @@ slice; a few things explicitly deferred to §7.7/later.
 - Needs a live Stripe account/API keys — same "don't fake it" reasoning
   as AI.
 
-### 7.12 Roles/RBAC completeness — S/M — **team invites built**
+### 7.12 Roles/RBAC completeness — S/M — **team invites + reviewer role built**
 
 - ~~Team invite flow~~ Built: `/studio/team` (ORG_ADMIN only, linked from
   the studio nav for admins) lists org members and lets an admin generate
@@ -678,12 +678,46 @@ slice; a few things explicitly deferred to §7.7/later.
   token, a garbage token, and an expired token (confirmed `valid: false`
   via the RPC first) all fall back cleanly to a brand-new org rather than
   erroring or double-joining.
-- Not built: Reviewer/Stakeholder read-only preview links with commenting
-  (spec's "Review-360-style" feedback) — the REVIEWER role can now be
-  *assigned* via invite, but nothing in the app yet treats it differently
-  from AUTHOR (no read-only enforcement, no commenting UI). Super Admin
-  console: cross-org platform management — still lowest priority, internal/
-  operator surface, not customer-facing.
+- ~~Reviewer/Stakeholder read-only preview links with commenting~~ Built:
+  a new `requireEditTier()` guard (layered on top of `requireTier`, not
+  merged into it — `requireTier` itself stays permissive of REVIEWER,
+  since a read like viewing a tier-gated page or exporting a SCORM
+  package isn't something a reviewer needs blocked from) now gates every
+  actual content-mutating Server Action (course/section/lesson/block
+  CRUD, quiz editing, themes, live session control) and throws
+  `ReadOnlyRoleError` for the REVIEWER role. The course editor page
+  itself redirects a REVIEWER to a new purpose-built
+  `/studio/courses/[courseId]/review` page instead of showing them a
+  half-disabled editor — a read-only outline (no drag/edit/delete) plus a
+  `CommentsPanel`. Comments (`course_comments`, migration
+  `0012_comments.sql`) are course-level threads any org member can post
+  to and mark resolved (feedback is a team conversation, not
+  reviewer-exclusive), though only the original author can delete their
+  own comment; the same panel is also embedded at the bottom of the main
+  editor page so authors see and can resolve feedback without switching
+  views.
+- RLS on `course_comments` scopes everything to same-org members via
+  `current_org_id()`, `with check (author_id = auth.uid())` on insert
+  blocks forging a comment as someone else, and — since the app only
+  ever needs to flip `resolved`, comments being otherwise immutable once
+  posted — a column-level grant (`revoke update ... ; grant update
+  (resolved) ...`) narrows UPDATE to that one column at the database
+  layer, overriding migration `0004`'s blanket per-table grant so a
+  client can't bypass the UI and rewrite comment text directly.
+- **Verified** against a real local Postgres: a REVIEWER can post a
+  comment but not forge one under another user's id; an AUTHOR in the
+  same org can see and resolve the REVIEWER's comment but can't delete it
+  or edit its text via a direct column update (`permission denied`,
+  confirming the column grant actually works, not just the RLS policy);
+  the REVIEWER can delete their own comment; a different org can neither
+  read nor post into the thread at all. A dev-server smoke test also
+  confirmed the new `/studio/team`, `/studio/courses/[id]/review`, and
+  invite-aware `/signup` routes compile and respond correctly (redirects
+  for unauthenticated studio pages, 200s for the public signup page even
+  with a garbage invite token) with no server errors.
+- Not built: per-lesson/per-block comment threads (course-level only, for
+  now); Super Admin console — cross-org platform management, still
+  lowest priority, internal/operator surface, not customer-facing.
 
 ### 7.13 Accessibility — WCAG 2.1 AA — cross-cutting, continuous + M final audit
 

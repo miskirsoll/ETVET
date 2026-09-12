@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireTier } from "@/lib/auth/requireTier";
+import { requireEditTier } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import type { LiveSlide, LiveSlideType } from "@/lib/types/db";
 
@@ -14,7 +14,7 @@ function generateJoinCode(): string {
 }
 
 export async function createLiveSession(formData: FormData) {
-  const session = await requireTier("MAXPRO");
+  const session = await requireEditTier("MAXPRO");
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
@@ -41,14 +41,14 @@ export async function createLiveSession(formData: FormData) {
 }
 
 export async function deleteLiveSession(sessionId: string) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_sessions").delete().eq("id", sessionId);
   revalidatePath("/studio/live");
 }
 
 export async function startSession(sessionId: string) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   const { data: firstSlide } = await supabase
     .from("live_slides")
@@ -65,20 +65,20 @@ export async function startSession(sessionId: string) {
 }
 
 export async function endSession(sessionId: string) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_sessions").update({ status: "ended" }).eq("id", sessionId);
   revalidatePath(`/studio/live/${sessionId}`);
 }
 
 export async function setLocked(sessionId: string, locked: boolean) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_sessions").update({ locked }).eq("id", sessionId);
 }
 
 export async function goToSlide(sessionId: string, slideId: string) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_sessions").update({ current_slide_id: slideId, locked: false }).eq("id", sessionId);
 }
@@ -92,7 +92,7 @@ const DEFAULT_SLIDE_CONFIG: Record<LiveSlideType, Record<string, unknown>> = {
 };
 
 export async function createSlide(sessionId: string, type: LiveSlideType): Promise<LiveSlide | null> {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("live_slides")
@@ -107,19 +107,19 @@ export async function createSlide(sessionId: string, type: LiveSlideType): Promi
 }
 
 export async function updateSlideConfig(slideId: string, config: Record<string, unknown>) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_slides").update({ config }).eq("id", slideId);
 }
 
 export async function deleteSlide(slideId: string) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("live_slides").delete().eq("id", slideId);
 }
 
 export async function reorderSlides(orderedIds: string[]) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("live_slides").update({ order: index }).eq("id", id))
@@ -127,7 +127,7 @@ export async function reorderSlides(orderedIds: string[]) {
 }
 
 export async function setQaStatus(questionId: string, status: "approved" | "hidden" | "answered" | "pending") {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("qa_questions").update({ status }).eq("id", questionId);
 }

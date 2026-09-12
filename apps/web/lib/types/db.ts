@@ -26,6 +26,15 @@ export interface AppUser {
   created_at: string;
 }
 
+export interface CourseComment {
+  id: string;
+  course_id: string;
+  author_id: string;
+  text: string;
+  resolved: boolean;
+  created_at: string;
+}
+
 export interface OrgInvite {
   id: string;
   org_id: string;

@@ -39,6 +39,27 @@ export async function requireTier(minTier: SubscriptionTier): Promise<Session> {
   return session;
 }
 
+export class ReadOnlyRoleError extends Error {
+  constructor() {
+    super("Reviewers have read-only access and can't make changes.");
+  }
+}
+
+/**
+ * Same as requireTier, but additionally blocks the read-only REVIEWER
+ * role -- for every Server Action that actually mutates data (create,
+ * update, delete, publish, reorder, session control, ...). requireTier
+ * itself stays permissive of REVIEWER (e.g. viewing a tier-gated page, or
+ * exporting a SCORM package, is a read -- not something a reviewer needs
+ * blocked from), so this is a separate guard layered on top rather than
+ * baked into requireTier for every caller.
+ */
+export async function requireEditTier(minTier: SubscriptionTier): Promise<Session> {
+  const session = await requireTier(minTier);
+  if (session.appUser.role === "REVIEWER") throw new ReadOnlyRoleError();
+  return session;
+}
+
 /** Page-level guard: redirects instead of throwing, for use in Server Components. */
 export async function requireTierOrRedirect(minTier: SubscriptionTier): Promise<Session> {
   const session = await getSession();

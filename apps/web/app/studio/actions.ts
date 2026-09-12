@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireTier } from "@/lib/auth/requireTier";
+import { requireEditTier } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import type { Block, BlockType, LessonType } from "@/lib/types/db";
 
 // ---------- Courses ----------
 
 export async function createCourse(formData: FormData) {
-  const session = await requireTier("PRO");
+  const session = await requireEditTier("PRO");
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
@@ -25,7 +25,7 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function duplicateCourse(formData: FormData) {
-  const session = await requireTier("PRO");
+  const session = await requireEditTier("PRO");
   const courseId = String(formData.get("id"));
   const supabase = await createClient();
 
@@ -104,7 +104,7 @@ export async function duplicateCourse(formData: FormData) {
 }
 
 export async function deleteCourse(formData: FormData) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const id = String(formData.get("id"));
   const supabase = await createClient();
   await supabase.from("courses").delete().eq("id", id);
@@ -122,7 +122,7 @@ function slugify(title: string): string {
 }
 
 export async function publishCourse(courseId: string, password: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   const { data: course } = await supabase
     .from("courses")
@@ -157,14 +157,14 @@ export async function publishCourse(courseId: string, password: string) {
 }
 
 export async function unpublishCourse(courseId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("courses").update({ status: "DRAFT" }).eq("id", courseId);
   revalidatePath(`/studio/courses/${courseId}`);
 }
 
 export async function updateCourseCover(courseId: string, coverImageUrl: string | null) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("courses").update({ cover_image_url: coverImageUrl }).eq("id", courseId);
   revalidatePath(`/studio/courses/${courseId}`);
@@ -174,7 +174,7 @@ export async function updateCourseCover(courseId: string, coverImageUrl: string 
 // ---------- Sections ----------
 
 export async function createSection(courseId: string, title: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("sections")
@@ -187,14 +187,14 @@ export async function createSection(courseId: string, title: string) {
 }
 
 export async function deleteSection(courseId: string, sectionId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("sections").delete().eq("id", sectionId);
   revalidatePath(`/studio/courses/${courseId}`);
 }
 
 export async function reorderSections(courseId: string, orderedIds: string[]) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("sections").update({ order: index }).eq("id", id))
@@ -210,7 +210,7 @@ export async function createLesson(
   title: string,
   type: LessonType
 ) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("lessons")
@@ -223,14 +223,14 @@ export async function createLesson(
 }
 
 export async function deleteLesson(courseId: string, lessonId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("lessons").delete().eq("id", lessonId);
   revalidatePath(`/studio/courses/${courseId}`);
 }
 
 export async function reorderLessons(courseId: string, orderedIds: string[]) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("lessons").update({ order: index }).eq("id", id))
@@ -258,7 +258,7 @@ const DEFAULT_BLOCK_CONTENT: Record<BlockType, Block["content"]> = {
 export async function createBlock(lessonId: string, type: BlockType): Promise<Block | null> {
   // Interactive blocks are the one MAXPRO-only block type -- everything
   // else (including team-authored courses on PRO) only needs PRO.
-  await requireTier(type === "interactive" ? "MAXPRO" : "PRO");
+  await requireEditTier(type === "interactive" ? "MAXPRO" : "PRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("blocks")
@@ -284,19 +284,19 @@ export async function createBlock(lessonId: string, type: BlockType): Promise<Bl
 }
 
 export async function updateBlockContent(blockId: string, content: Block["content"]) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("blocks").update({ content }).eq("id", blockId);
 }
 
 export async function deleteBlock(blockId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("blocks").delete().eq("id", blockId);
 }
 
 export async function reorderBlocks(orderedIds: string[]) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("blocks").update({ order: index }).eq("id", id))
@@ -309,7 +309,7 @@ export async function setInteractiveBlockConfig(
   blockId: string,
   fields: { live_session_id: string | null; mode: "sync" | "async" }
 ) {
-  await requireTier("MAXPRO");
+  await requireEditTier("MAXPRO");
   const supabase = await createClient();
   await supabase.from("interactive_blocks").update(fields).eq("block_id", blockId);
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireTier } from "@/lib/auth/requireTier";
+import { requireEditTier } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import type { Question, QuestionChoice, QuestionType } from "@/lib/types/db";
 
@@ -25,7 +25,7 @@ export async function createQuestion(
   lessonId: string,
   type: QuestionType
 ): Promise<{ question: Question; choices: QuestionChoice[] } | null> {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
 
   const { count } = await supabase
@@ -61,19 +61,19 @@ export async function createQuestion(
 }
 
 export async function updateQuestionPrompt(questionId: string, prompt: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("questions").update({ prompt }).eq("id", questionId);
 }
 
 export async function deleteQuestion(questionId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("questions").delete().eq("id", questionId);
 }
 
 export async function reorderQuestions(orderedIds: string[]) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await Promise.all(
     orderedIds.map((id, index) => supabase.from("questions").update({ order: index }).eq("id", id))
@@ -81,7 +81,7 @@ export async function reorderQuestions(orderedIds: string[]) {
 }
 
 export async function addChoice(questionId: string): Promise<QuestionChoice | null> {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   const { count } = await supabase
     .from("question_choices")
@@ -99,7 +99,7 @@ export async function updateChoice(
   choiceId: string,
   fields: Partial<Pick<QuestionChoice, "text" | "is_correct" | "feedback">>
 ) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("question_choices").update(fields).eq("id", choiceId);
 }
@@ -111,14 +111,14 @@ export async function updateChoice(
  * updateChoice directly instead, since more than one may be correct.
  */
 export async function setSingleCorrectChoice(questionId: string, choiceId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("question_choices").update({ is_correct: false }).eq("question_id", questionId);
   await supabase.from("question_choices").update({ is_correct: true }).eq("id", choiceId);
 }
 
 export async function deleteChoice(choiceId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("question_choices").delete().eq("id", choiceId);
 }
@@ -132,7 +132,7 @@ export async function updateQuizSettings(
     time_limit_seconds: number | null;
   }
 ) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("lessons").update(settings).eq("id", lessonId);
 }

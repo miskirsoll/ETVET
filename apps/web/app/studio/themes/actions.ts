@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireTier } from "@/lib/auth/requireTier";
+import { requireEditTier } from "@/lib/auth/requireTier";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEFAULT_THEME_COLORS,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/types/db";
 
 export async function createTheme(formData: FormData) {
-  const session = await requireTier("PRO");
+  const session = await requireEditTier("PRO");
   const name = String(formData.get("name") ?? "").trim() || "Untitled theme";
 
   const supabase = await createClient();
@@ -36,21 +36,21 @@ export async function updateTheme(
   themeId: string,
   fields: Partial<Pick<Theme, "name" | "colors" | "fonts" | "logo_url" | "layout_config">>
 ) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("themes").update(fields).eq("id", themeId);
   revalidatePath(`/studio/themes/${themeId}`);
 }
 
 export async function deleteTheme(themeId: string) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("themes").delete().eq("id", themeId);
   revalidatePath("/studio/themes");
 }
 
 export async function setCourseTheme(courseId: string, themeId: string | null) {
-  await requireTier("PRO");
+  await requireEditTier("PRO");
   const supabase = await createClient();
   await supabase.from("courses").update({ theme_id: themeId }).eq("id", courseId);
   revalidatePath(`/studio/courses/${courseId}`);
